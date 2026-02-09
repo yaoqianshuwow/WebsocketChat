@@ -103,7 +103,7 @@ func LoadConfig() error {
 	}
 
 	// 如果所有路径都尝试过仍然失败，使用项目根目录的绝对路径作为最后尝试
-	projectRoot := "C:\\Users\\28407\\Desktop\\BaiduSyncdisk\\goproject\\KamaChat-main"
+	projectRoot := "C:\\Users\\28407\\Desktop\\BaiduSyncdisk\\goproject\\WebsocketChat-main"
 	configPath := filepath.Join(projectRoot, "configs", "config.toml")
 	if _, err := toml.DecodeFile(configPath, config); err != nil {
 		log.Fatalf("Failed to load config file from any location: %v", err)
