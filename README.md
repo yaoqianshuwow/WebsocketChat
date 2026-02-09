@@ -39,7 +39,7 @@
     ```
 
 5. **访问系统**
-    - 前端：http://localhost:8080
+    - 前端：http://localhost:81
     - 后端API：http://localhost:8000
 
 ## 🎯 核心功能
