@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: websocketchat-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 111111
+      MYSQL_DATABASE: wechat_database
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 111111
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - websocketchat-network
+  
+  redis:
+    image: redis:6.0
+    container_name: websocketchat-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - websocketchat-network
+  
+  zookeeper:
+    image: wurstmeister/zookeeper:3.4.6
+    container_name: websocketchat-zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    networks:
+      - websocketchat-network
+  
+  kafka:
+    image: wurstmeister/kafka:2.13-2.8.1
+    container_name: websocketchat-kafka
+    restart: always
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CREATE_TOPICS: "login:1:1,chat_message:1:1,logout:1:1"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - websocketchat-network
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  websocketchat-network:
+    driver: bridge

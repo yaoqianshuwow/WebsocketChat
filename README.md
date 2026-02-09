@@ -42,6 +42,153 @@
     - 前端：http://localhost:81
     - 后端API：http://localhost:8000
 
+## 🐳 Docker部署
+
+### 前提条件
+- Docker 20.0+ 
+- Docker Compose 1.29+
+
+### 使用Docker部署依赖服务
+
+1. **创建Docker Compose文件**
+
+    在项目根目录创建 `docker-compose.yml` 文件：
+
+    ```yaml
+    version: '3.8'
+    
+    services:
+      mysql:
+        image: mysql:5.7
+        container_name: websocketchat-mysql
+        restart: always
+        environment:
+          MYSQL_ROOT_PASSWORD: 111111
+          MYSQL_DATABASE: wechat_database
+          MYSQL_USER: root
+          MYSQL_PASSWORD: 111111
+        ports:
+          - "3306:3306"
+        volumes:
+          - mysql-data:/var/lib/mysql
+        networks:
+          - websocketchat-network
+      
+      redis:
+        image: redis:6.0
+        container_name: websocketchat-redis
+        restart: always
+        ports:
+          - "6379:6379"
+        volumes:
+          - redis-data:/data
+        networks:
+          - websocketchat-network
+      
+      zookeeper:
+        image: wurstmeister/zookeeper:3.4.6
+        container_name: websocketchat-zookeeper
+        restart: always
+        ports:
+          - "2181:2181"
+        networks:
+          - websocketchat-network
+      
+      kafka:
+        image: wurstmeister/kafka:2.13-2.8.1
+        container_name: websocketchat-kafka
+        restart: always
+        environment:
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_CREATE_TOPICS: "login:1:1,chat_message:1:1,logout:1:1"
+        ports:
+          - "9092:9092"
+        depends_on:
+          - zookeeper
+        networks:
+          - websocketchat-network
+    
+    volumes:
+      mysql-data:
+      redis-data:
+    
+    networks:
+      websocketchat-network:
+        driver: bridge
+    ```
+
+2. **启动Docker容器**
+
+    ```bash
+    # 在项目根目录执行
+    docker-compose up -d
+    ```
+
+3. **验证服务是否启动成功**
+
+    ```bash
+    # 查看容器状态
+    docker-compose ps
+    
+    # 检查MySQL是否就绪
+    docker exec -it websocketchat-mysql mysql -uroot -p111111 -e "SELECT 1;"
+    
+    # 检查Redis是否就绪
+    docker exec -it websocketchat-redis redis-cli ping
+    
+    # 检查Kafka是否就绪
+    docker exec -it websocketchat-kafka kafka-topics.sh --list --bootstrap-server localhost:9092
+    ```
+
+4. **配置项目连接信息**
+
+    修改 `configs/config.toml` 文件，确保连接信息与Docker容器一致：
+
+    ```toml
+    [mysqlConfig]
+    host = "127.0.0.1"
+    port = 3306
+    user = "root"
+    password = "111111"
+    databaseName = "wechat_database"
+    
+    [redisConfig]
+    host = "127.0.0.1"
+    port = 6379
+    password = ""
+    db = 0
+    
+    [kafkaConfig]
+    messageMode = "kafka"
+    hostPort = "127.0.0.1:9092"
+    loginTopic = "login"
+    chatTopic = "chat_message"
+    logoutTopic = "logout"
+    partition = 1
+    timeout = 1
+    ```
+
+5. **停止和清理**
+
+    ```bash
+    # 停止容器
+    docker-compose down
+    
+    # 停止容器并删除数据卷
+    docker-compose down -v
+    ```
+
+### Docker部署优势
+
+- **环境一致性**：确保所有开发和部署环境一致
+- **快速部署**：一键启动所有依赖服务
+- **隔离性**：各服务之间相互隔离，避免冲突
+- **可扩展性**：方便后续添加更多服务或扩展现有服务
+- **跨平台**：在任何支持Docker的平台上运行一致
+
 ## 🎯 核心功能
 
 ### 1. 用户认证系统
