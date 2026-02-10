@@ -35,7 +35,7 @@
     ```bash
     cd web/chat-server
     npm install
-    npm run serve
+    npm run dev
     ```
 
 5. **访问系统**
@@ -468,89 +468,6 @@ flowchart TD
 | 认证 | JWT | - | Token认证 |
 | 音视频 | WebRTC | - | 实时音视频通话 |
 
-## 📁 模块关系
-
-### 系统架构图
-
-```mermaid
-flowchart TD
-    subgraph 前端层
-        WebClient[前端Web客户端]
-        MobileClient[移动端客户端]
-    end
-
-    subgraph 应用层
-        APIServer[API服务器]
-        WSServer[WebSocket服务器]
-        AuthService[认证服务]
-        ContactService[联系人服务]
-        GroupService[群组服务]
-        MessageService[消息服务]
-        AVService[音视频服务]
-        AdminService[后台管理服务]
-    end
-
-    subgraph 中间件层
-        Kafka[Kafka消息队列]
-        Redis[Redis缓存]
-    end
-
-    subgraph 存储层
-        MySQL[MySQL数据库]
-        FileStorage[文件存储]
-    end
-
-    WebClient --> APIServer
-    WebClient --> WSServer
-    MobileClient --> APIServer
-    MobileClient --> WSServer
-
-    APIServer --> AuthService
-    APIServer --> ContactService
-    APIServer --> GroupService
-    APIServer --> MessageService
-    APIServer --> AdminService
-
-    WSServer --> MessageService
-    WSServer --> AVService
-
-    MessageService --> Kafka
-    Kafka --> MessageService
-
-    AuthService --> Redis
-    ContactService --> Redis
-    GroupService --> Redis
-    MessageService --> Redis
-
-    AuthService --> MySQL
-    ContactService --> MySQL
-    GroupService --> MySQL
-    MessageService --> MySQL
-    AdminService --> MySQL
-
-    MessageService --> FileStorage
-    AVService --> FileStorage
-```
-
-### 模块依赖关系
-
-```mermaid
-flowchart LR
-    AuthService --> UserModel[用户模型]
-    ContactService --> UserModel
-    ContactService --> ContactModel[联系人模型]
-    GroupService --> UserModel
-    GroupService --> GroupModel[群组模型]
-    MessageService --> UserModel
-    MessageService --> ContactModel
-    MessageService --> GroupModel
-    MessageService --> MessageModel[消息模型]
-    MessageService --> SessionModel[会话模型]
-    AVService --> UserModel
-    AVService --> MessageModel
-    AdminService --> UserModel
-    AdminService --> GroupModel
-```
 
 ## 🔄 核心业务流程
 
@@ -722,10 +639,3 @@ sequenceDiagram
 - 支持PC端和移动端
 - 自适应不同屏幕尺寸
 
-## 🔮 未来规划
-
-1. **多端适配**：开发移动端APP（React Native/Flutter）
-2. **消息加密**：实现端到端加密
-3. **云存储**：集成云存储服务，提高文件存储可靠性
-4. **集群部署**：支持多服务器集群部署
-5. **AI功能**：集成AI助手，提供智能回复等功能
