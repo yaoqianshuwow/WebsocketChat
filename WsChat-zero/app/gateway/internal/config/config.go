@@ -9,6 +9,7 @@ type Config struct {
 	FriendRpc RpcConf
 	FileRpc   RpcConf
 	Redis     RedisConf
+	JwtAuth   JwtAuthConf
 }
 
 type RpcConf struct {
@@ -18,4 +19,8 @@ type RpcConf struct {
 type RedisConf struct {
 	Host string
 	Pass string
+}
+
+type JwtAuthConf struct {
+	AccessSecret string
 }

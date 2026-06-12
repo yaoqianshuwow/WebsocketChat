@@ -8,20 +8,13 @@ import (
 
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/logic/Contact"
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/svc"
-	"github.com/your-org/ws-chat-zero/app/gateway/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
 func GetContactListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.CommonResp
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-
 		l := Contact.NewGetContactListLogic(r.Context(), svcCtx)
-		resp, err := l.GetContactList(&req)
+		resp, err := l.GetContactList()
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

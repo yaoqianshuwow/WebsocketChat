@@ -41,6 +41,29 @@ class ApiClient {
     return res.json();
   }
 
+  private async upload<T>(path: string, file: File, extra?: Record<string, string>) {
+    const form = new FormData();
+    form.append('file', file);
+    Object.entries(extra || {}).forEach(([key, value]) => form.append(key, value));
+
+    const headers: Record<string, string> = {};
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    return res.json() as Promise<T>;
+  }
+
   // ── 认证 ──
   login(data: { username: string; password: string }) {
     return this.request<import('../types').LoginResp>('/login', data);
@@ -129,6 +152,14 @@ class ApiClient {
 
   updateGroupInfo(data: import('../types').UpdateGroupInfoReq) {
     return this.request<import('../types').CommonResp>('/group/updateGroupInfo', data);
+  }
+
+  uploadFile(file: File) {
+    return this.upload<import('../types').CommonResp>('/message/uploadFile', file);
+  }
+
+  uploadAvatar(file: File) {
+    return this.upload<import('../types').CommonResp>('/message/uploadAvatar', file);
   }
 
   leaveGroup(groupId: number) {

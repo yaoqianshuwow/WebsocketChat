@@ -9,7 +9,7 @@ type ApplyContactReq struct {
 }
 
 type ApplyListResp struct {
-	Code    int32     `json:"code"`
+	Code    int32     `json:"code,optional"`
 	Message string    `json:"message"`
 	Data    []ApplyVo `json:"data,optional"`
 }
@@ -32,7 +32,7 @@ type ContactInfoReq struct {
 }
 
 type ContactListResp struct {
-	Code    int32       `json:"code"`
+	Code    int32       `json:"code,optional"`
 	Message string      `json:"message"`
 	Data    []ContactVo `json:"data,optional"`
 }
@@ -100,13 +100,13 @@ type GroupInfoResp struct {
 }
 
 type GroupListResp struct {
-	Code    int32           `json:"code"`
+	Code    int32           `json:"code,optional"`
 	Message string          `json:"message"`
 	Data    []GroupInfoResp `json:"data,optional"`
 }
 
 type GroupMemberListResp struct {
-	Code       int32      `json:"code"`
+	Code       int32      `json:"code,optional"`
 	Message    string     `json:"message"`
 	MemberList []MemberVo `json:"memberList,optional"`
 }
@@ -137,7 +137,7 @@ type MemberVo struct {
 }
 
 type MessageListResp struct {
-	Code    int32       `json:"code"`
+	Code    int32       `json:"code,optional"`
 	Message string      `json:"message"`
 	Data    []MessageVo `json:"data,optional"`
 	Total   int64       `json:"total"`
@@ -185,14 +185,14 @@ type SearchUsersReq struct {
 }
 
 type SearchUsersResp struct {
-	Code    int32          `json:"code"`
+	Code    int32          `json:"code,optional"`
 	Message string         `json:"message"`
 	Data    []UserInfoResp `json:"data,optional"`
 	Total   int64          `json:"total"`
 }
 
 type SessionListResp struct {
-	Code    int32       `json:"code"`
+	Code    int32       `json:"code,optional"`
 	Message string      `json:"message"`
 	Data    []SessionVo `json:"data,optional"`
 }
@@ -243,7 +243,7 @@ type UpdateUserInfoReq struct {
 }
 
 type UserInfoListResp struct {
-	Code    int32          `json:"code"`
+	Code    int32          `json:"code,optional"`
 	Message string         `json:"message"`
 	Data    []UserInfoResp `json:"data,optional"`
 }

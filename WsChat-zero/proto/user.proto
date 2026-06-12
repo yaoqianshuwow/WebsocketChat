@@ -3,8 +3,6 @@ syntax = "proto3";
 package user;
 option go_package = "./pb";
 
-import "common.proto";
-
 // 用户实体
 message UserInfo {
   int64  id        = 1;

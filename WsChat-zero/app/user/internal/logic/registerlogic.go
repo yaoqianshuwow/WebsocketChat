@@ -28,6 +28,12 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 }
 
 func (l *RegisterLogic) Register(in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	if in.Username == "" {
+		return &pb.RegisterResponse{Code: 1, Message: "用户名不能为空"}, nil
+	}
+	if in.Nickname == "" {
+		return &pb.RegisterResponse{Code: 1, Message: "昵称不能为空"}, nil
+	}
 	var count int64
 	l.svcCtx.DB.Model(&model.UserInfo{}).Where("username = ?", in.Username).Count(&count)
 	if count > 0 {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 
 export default function Register() {
@@ -15,21 +15,29 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (!username || !password) {
-      setError('请填写用户名和密码');
+    if (!username.trim()) {
+      setError('请输入用户名');
+      return;
+    }
+    if (!nickname.trim()) {
+      setError('请输入昵称');
+      return;
+    }
+    if (!password) {
+      setError('请输入密码');
       return;
     }
     if (password.length < 6) {
-      setError('密码至少6位');
+      setError('密码至少 6 位');
       return;
     }
 
-    const ok = await register(username, password, nickname || undefined);
+    const ok = await register(username.trim(), password, nickname.trim());
     if (ok) {
       setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => navigate('/login'), 1200);
     } else {
-      setError('注册失败，用户名可能已存在');
+      setError('注册失败，请检查用户名是否已存在');
     }
   };
 
@@ -39,7 +47,7 @@ export default function Register() {
         <h2 style={styles.title}>注册账号</h2>
 
         {error && <div style={styles.error}>{error}</div>}
-        {success && <div style={styles.success}>注册成功！即将跳转到登录页...</div>}
+        {success && <div style={styles.success}>注册成功，正在跳转到登录页...</div>}
 
         <div style={styles.field}>
           <label style={styles.label}>用户名 *</label>
@@ -48,12 +56,12 @@ export default function Register() {
 
         <div style={styles.field}>
           <label style={styles.label}>密码 *</label>
-          <input style={styles.input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位" />
+          <input style={styles.input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少 6 位" />
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>昵称</label>
-          <input style={styles.input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="选填" />
+          <label style={styles.label}>昵称 *</label>
+          <input style={styles.input} value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="请输入昵称" />
         </div>
 
         <button style={styles.btn} type="submit" disabled={loading}>
@@ -61,7 +69,10 @@ export default function Register() {
         </button>
 
         <div style={styles.footer}>
-          已有账号？<Link to="/login" style={styles.link}>立即登录</Link>
+          已有账号？
+          <Link to="/login" style={styles.link}>
+            立即登录
+          </Link>
         </div>
       </form>
     </div>
@@ -79,5 +90,5 @@ const styles: Record<string, React.CSSProperties> = {
   input: { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e0e0e0', fontSize: 14, outline: 'none', boxSizing: 'border-box' },
   btn: { width: '100%', padding: '12px', background: '#4a90d9', color: '#fff', border: 'none', borderRadius: 6, fontSize: 16, cursor: 'pointer', marginTop: 8 },
   footer: { textAlign: 'center', marginTop: 16, fontSize: 13, color: '#999' },
-  link: { color: '#4a90d9', textDecoration: 'none' },
+  link: { color: '#4a90d9', textDecoration: 'none', marginLeft: 4 },
 };

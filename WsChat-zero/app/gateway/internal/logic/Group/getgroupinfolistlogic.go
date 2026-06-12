@@ -14,11 +14,11 @@ func NewGetGroupInfoListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 	return &GetGroupInfoListLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
 }
 
-func (l *GetGroupInfoListLogic) GetGroupInfoList(req *types.CommonResp) (resp *types.GroupListResp, err error) {
+func (l *GetGroupInfoListLogic) GetGroupInfoList() (resp *types.GroupListResp, err error) {
 	uid := l.ctx.Value("userId").(int64)
 	r, e := l.svcCtx.FriendClient.GetGroupInfoList(l.ctx, &friendpb.GetContactListRequest{UserId: uid})
 	if e != nil || r.Code != 0 { return &types.GroupListResp{Code: r.GetCode(), Message: r.GetMessage()}, nil }
-	var data []types.GroupInfoResp
+	data := make([]types.GroupInfoResp, 0)
 	for _, g := range r.Data { data = append(data, types.GroupInfoResp{GroupId: g.Id, Name: g.Name, Avatar: g.Avatar, OwnerId: g.OwnerId, MemberCount: g.MemberCount, AddMode: g.AddMode, Status: g.Status, Notice: g.Notice}) }
 	return &types.GroupListResp{Code: 0, Message: "ok", Data: data}, nil
 }

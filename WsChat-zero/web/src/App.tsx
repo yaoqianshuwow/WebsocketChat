@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
+import { useChatStore } from '@/store/chat';
 import wsClient from '@/ws/client';
 import Layout from '@/components/Layout';
 import Login from '@/pages/Login';
@@ -19,6 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { init, token } = useAuthStore();
+  const { loadSessions, loadMessages, currentSession } = useChatStore();
 
   useEffect(() => {
     init();
@@ -30,6 +32,21 @@ export default function App() {
       return () => { wsClient.disconnect(); };
     }
   }, [token]);
+
+  useEffect(() => {
+    const handleMessage = (msg: { data?: { sessionId?: number } }) => {
+      void loadSessions();
+      const sessionId = Number(msg?.data?.sessionId || 0);
+      if (sessionId > 0 && currentSession?.sessionId === sessionId) {
+        void loadMessages(sessionId);
+      }
+    };
+
+    wsClient.on('message:new', handleMessage);
+    return () => {
+      wsClient.off('message:new', handleMessage);
+    };
+  }, [currentSession, loadMessages, loadSessions]);
 
   return (
     <BrowserRouter>

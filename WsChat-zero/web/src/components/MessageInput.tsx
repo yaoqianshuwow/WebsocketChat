@@ -1,63 +1,141 @@
-import { useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
+import api from '@/api/client';
+import { useAuthStore } from '@/store/auth';
 import { useChatStore } from '@/store/chat';
 import wsClient from '@/ws/client';
+import type { MessageVo } from '@/types';
 
 export default function MessageInput() {
   const [text, setText] = useState('');
-  const { currentSession } = useChatStore();
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { currentSession, addMessage, markMessageStatus, wsState } = useChatStore();
+  const { user, userInfo } = useAuthStore();
 
-  const handleSend = useCallback(() => {
+  const userId = user?.userId ?? user?.user_id ?? userInfo?.user_id ?? 0;
+
+  if (!currentSession) {
+    return null;
+  }
+
+  const sendText = () => {
     const content = text.trim();
-    if (!content || !currentSession) return;
+    if (!content) return;
 
-    wsClient.sendMessage(content, currentSession.peerId, currentSession.sessionType);
+    const localId = `local-${Date.now()}`;
+    const localMessage: MessageVo = {
+      localId,
+      senderId: userId,
+      receiverId: currentSession.peerId,
+      msgType: 1,
+      content,
+      createdAt: Math.floor(Date.now() / 1000),
+      status: 'sending',
+      mine: true,
+    };
+
+    addMessage(localMessage);
+    const sent = wsClient.sendMessage(content, currentSession.peerId, currentSession.sessionType, currentSession.sessionId);
+    markMessageStatus(localId, sent ? 'sent' : 'failed');
     setText('');
-  }, [text, currentSession]);
+  };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleSend = () => {
+    if (busy || wsState === 'connecting' || wsState === 'reconnecting') return;
+    sendText();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  if (!currentSession) {
-    return null;
-  }
+  const handleUpload = async (file: File) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      await api.uploadFile(file);
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   return (
     <div style={styles.container}>
-      <textarea
-        style={styles.input}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="输入消息..."
-        rows={3}
-      />
-      <button
-        style={styles.sendBtn}
-        onClick={handleSend}
-        disabled={!text.trim()}
-      >
-        发送
-      </button>
+      <div style={styles.toolbar}>
+        <button type="button" style={styles.toolBtn} onClick={() => fileRef.current?.click()}>
+          附件
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void handleUpload(file);
+          }}
+        />
+        <div style={styles.hint}>{busy ? '正在上传' : wsState === 'connected' ? '连接正常' : '等待连接'}</div>
+      </div>
+
+      <div style={styles.editor}>
+        <textarea
+          style={styles.input}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+          rows={3}
+        />
+        <button type="button" style={styles.sendBtn} onClick={handleSend} disabled={!text.trim() || busy}>
+          发送
+        </button>
+      </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    display: 'flex', alignItems: 'flex-end', gap: 8, padding: '8px 16px',
-    borderTop: '1px solid #e8e8e8', background: '#fff',
+    padding: 14,
+    borderTop: '1px solid #e8e8e8',
+    background: '#fff',
+    display: 'grid',
+    gap: 10,
   },
+  toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  toolBtn: {
+    height: 34,
+    padding: '0 12px',
+    borderRadius: 12,
+    border: '1px solid #dbe7fb',
+    background: '#f7fbff',
+    color: '#4a90d9',
+  },
+  hint: { fontSize: 12, color: '#999' },
+  editor: { display: 'flex', alignItems: 'flex-end', gap: 10 },
   input: {
-    flex: 1, resize: 'none', padding: '8px 12px', borderRadius: 6, border: '1px solid #e0e0e0',
-    fontSize: 14, lineHeight: 1.5, outline: 'none',
+    flex: 1,
+    resize: 'none',
+    minHeight: 96,
+    padding: '14px 16px',
+    borderRadius: 18,
+    border: '1px solid #dbe7fb',
+    background: '#f8fbff',
+    color: '#333',
+    lineHeight: 1.6,
   },
   sendBtn: {
-    padding: '8px 20px', background: '#4a90d9', color: '#fff', border: 'none',
-    borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 500,
-    height: 40,
+    minWidth: 96,
+    height: 48,
+    padding: '0 18px',
+    borderRadius: 16,
+    border: 'none',
+    color: '#fff',
+    fontWeight: 700,
+    background: '#4a90d9',
   },
 };

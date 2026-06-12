@@ -1317,7 +1317,7 @@ var File_user_proto protoreflect.FileDescriptor
 const file_user_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"user.proto\x12\x04user\x1a\fcommon.proto\"\xa0\x02\n" +
+	"user.proto\x12\x04user\"\xa0\x02\n" +
 	"\bUserInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -1503,7 +1503,6 @@ func file_user_proto_init() {
 	if File_user_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

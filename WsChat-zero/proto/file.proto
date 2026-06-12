@@ -3,8 +3,6 @@ syntax = "proto3";
 package file;
 option go_package = "./pb";
 
-import "common.proto";
-
 message UploadFileRequest {
   bytes  data      = 1;
   string file_name = 2;

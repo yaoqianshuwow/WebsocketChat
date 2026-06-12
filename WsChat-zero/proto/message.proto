@@ -3,8 +3,6 @@ syntax = "proto3";
 package msg;
 option go_package = "./pb";
 
-import "common.proto";
-
 message Message {
   int64  id          = 1;
   int64  sender_id   = 2;

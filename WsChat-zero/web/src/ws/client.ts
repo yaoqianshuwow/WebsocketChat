@@ -102,13 +102,15 @@ class WsClient {
   send(msg: WsMessage) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
+      return true;
     }
+    return false;
   }
 
-  sendMessage(content: string, receiverId: number, chatType: number, msgType = 1) {
-    this.send({
+  sendMessage(content: string, receiverId: number, chatType: number, sessionId: number, msgType = 1) {
+    return this.send({
       type: 'text',
-      data: { content, receiver_id: receiverId, chat_type: chatType, msg_type: msgType },
+      data: { content, receiver_id: receiverId, chat_type: chatType, msg_type: msgType, session_id: sessionId },
     });
   }
 

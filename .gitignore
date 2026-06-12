@@ -1,3 +1,8 @@
 # 忽略所有 task 文件夹
 task/
 WsChat-zero/task/
+*.exe
+*.exe~
+*~
+WsChat-zero/.playwright-mcp/
+WsChat-zero/web/node_modules

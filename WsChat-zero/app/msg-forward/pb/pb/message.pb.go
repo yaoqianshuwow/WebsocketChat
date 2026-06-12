@@ -673,7 +673,7 @@ var File_message_proto protoreflect.FileDescriptor
 
 const file_message_proto_rawDesc = "" +
 	"\n" +
-	"\rmessage.proto\x12\x03msg\x1a\fcommon.proto\"\xd4\x02\n" +
+	"\rmessage.proto\x12\x03msg\"\xd4\x02\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x03R\bsenderId\x12\x1f\n" +
@@ -791,7 +791,6 @@ func file_message_proto_init() {
 	if File_message_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

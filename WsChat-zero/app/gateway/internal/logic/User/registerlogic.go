@@ -25,6 +25,12 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 }
 
 func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.RegisterResp, err error) {
+	if req.Username == "" {
+		return &types.RegisterResp{Code: 1, Message: "用户名不能为空"}, nil
+	}
+	if req.Nickname == "" {
+		return &types.RegisterResp{Code: 1, Message: "昵称不能为空"}, nil
+	}
 	rpcResp, err := l.svcCtx.UserClient.Register(l.ctx, &userpb.RegisterRequest{
 		Username: req.Username,
 		Password: req.Password,

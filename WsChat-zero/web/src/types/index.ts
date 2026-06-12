@@ -32,6 +32,15 @@ export interface RegisterResp {
   user_id: number;
 }
 
+export interface SessionResp {
+  code: number;
+  message: string;
+  sessionId?: number;
+  peerId?: number;
+  sessionType?: number;
+  sessionName?: string;
+}
+
 export interface UserInfoResp {
   code: number;
   message: string;
@@ -47,6 +56,13 @@ export interface UserInfoResp {
   role?: number;
 }
 
+export interface SearchUsersResp {
+  code: number;
+  message: string;
+  data: UserInfoResp[];
+  total: number;
+}
+
 export interface UpdateUserInfoReq {
   nickname?: string;
   avatar?: string;
@@ -57,7 +73,8 @@ export interface UpdateUserInfoReq {
 
 // ── 消息 ──
 export interface MessageVo {
-  msgId: number;
+  msgId?: number;
+  localId?: string;
   senderId: number;
   receiverId: number;
   msgType: number;
@@ -66,6 +83,8 @@ export interface MessageVo {
   fileName?: string;
   fileSize?: number;
   createdAt: number;
+  status?: 'sending' | 'sent' | 'failed';
+  mine?: boolean;
 }
 
 export interface MessageListResp {
@@ -135,6 +154,15 @@ export interface GroupInfoResp {
   add_mode?: number;
   status?: number;
   notice?: string;
+}
+
+export interface UpdateGroupInfoReq {
+  groupId: number;
+  name?: string;
+  avatar?: string;
+  notice?: string;
+  addMode?: number;
+  status?: number;
 }
 
 export interface GroupListResp {

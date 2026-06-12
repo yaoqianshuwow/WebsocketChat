@@ -1,0 +1,34 @@
+29. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+31. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+33. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+34. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+63. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+65. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+67. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+68. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+99. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+100. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+101. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+102. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+103. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+104. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+105. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+106. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+107. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+108. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+109. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+110. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+111. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+112. [POST] http://127.0.0.1:3000/api/v1/contact/getUserList => [200] OK
+113. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+114. [POST] http://127.0.0.1:3000/api/v1/contact/getNewContactList => [200] OK
+115. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+116. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+117. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+118. [POST] http://127.0.0.1:3000/api/v1/group/loadMyGroup => [200] OK
+119. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+120. [POST] http://127.0.0.1:3000/api/v1/group/getGroupMemberList => [200] OK
+157. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+158. [POST] http://127.0.0.1:3000/api/v1/session/getUserSessionList => [200] OK
+
+Note: 120 static requests not shown, run with "static" option to see them.

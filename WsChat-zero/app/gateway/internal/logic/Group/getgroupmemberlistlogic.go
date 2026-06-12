@@ -17,7 +17,7 @@ func NewGetGroupMemberListLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 func (l *GetGroupMemberListLogic) GetGroupMemberList(req *types.GroupIdReq) (resp *types.GroupMemberListResp, err error) {
 	r, e := l.svcCtx.FriendClient.GetGroupMemberList(l.ctx, &friendpb.GetGroupMemberListRequest{GroupId: req.GroupId})
 	if e != nil || r.Code != 0 { return &types.GroupMemberListResp{Code: r.GetCode(), Message: r.GetMessage()}, nil }
-	var members []types.MemberVo
+	members := make([]types.MemberVo, 0)
 	for _, m := range r.Data { members = append(members, types.MemberVo{UserId: m.UserId, Nickname: m.Nickname, Role: m.Role, Avatar: ""}) }
 	return &types.GroupMemberListResp{Code: 0, Message: "ok", MemberList: members}, nil
 }

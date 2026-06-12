@@ -1,0 +1,1 @@
+﻿WsChat upload test $(Get-Date -Format o)

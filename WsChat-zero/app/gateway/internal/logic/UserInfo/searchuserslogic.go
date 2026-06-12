@@ -27,7 +27,7 @@ func (l *SearchUsersLogic) SearchUsers(req *types.SearchUsersReq) (resp *types.S
 	if e != nil || r.Code != 0 {
 		return &types.SearchUsersResp{Code: r.GetCode(), Message: r.GetMessage()}, nil
 	}
-	var data []types.UserInfoResp
+	data := make([]types.UserInfoResp, 0)
 	for _, u := range r.Data {
 		data = append(data, types.UserInfoResp{
 			UserId: u.Id, Username: u.Username, Nickname: u.Nickname,

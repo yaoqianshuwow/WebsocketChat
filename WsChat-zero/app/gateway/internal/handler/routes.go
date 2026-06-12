@@ -21,10 +21,10 @@ import (
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// WebSocket 路由
 	server.AddRoute(rest.Route{
-		Method:  http.MethodGet,
-		Path:    "/wss",
+		Method: http.MethodGet,
+		Path:   "/wss",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			websocket.WSHandler(w, r, serverCtx.UserClient)
+			websocket.WSHandler(w, r, serverCtx)
 		},
 	})
 	server.AddRoutes(

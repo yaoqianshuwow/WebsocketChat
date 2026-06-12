@@ -1,0 +1,14 @@
+{"@timestamp":"2026-06-12T22:36:49.795+08:00","caller":"websocket/handler.go:51","content":"ws auth failed: token=eyJhbGciOi, err=","level":"error"}
+{"@timestamp":"2026-06-12T22:36:52.794+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:53.799+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:54.806+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:55.821+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:56.838+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:57.859+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:58.878+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:36:59.882+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:37:00.889+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:37:01.897+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:37:02.901+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:37:03.920+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}
+{"@timestamp":"2026-06-12T22:37:04.290+08:00","caller":"websocket/client.go:34","content":"ws read error: websocket: close 1005 (no status)","level":"error"}

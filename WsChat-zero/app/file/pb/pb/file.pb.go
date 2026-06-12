@@ -386,7 +386,7 @@ var File_file_proto protoreflect.FileDescriptor
 const file_file_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"file.proto\x12\x04file\x1a\fcommon.proto\"z\n" +
+	"file.proto\x12\x04file\"z\n" +
 	"\x11UploadFileRequest\x12\x12\n" +
 	"\x04data\x18\x01 \x01(\fR\x04data\x12\x1b\n" +
 	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12\x1b\n" +
@@ -458,7 +458,6 @@ func file_file_proto_init() {
 	if File_file_proto != nil {
 		return
 	}
-	file_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

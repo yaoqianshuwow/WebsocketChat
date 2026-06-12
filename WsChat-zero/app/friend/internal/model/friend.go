@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// Contact 联系人/好友
+// Contact 好友关系
 type Contact struct {
 	Id          int64     `gorm:"column:id;primaryKey;autoIncrement"`
 	UserId      int64     `gorm:"column:user_id;index:idx_user_contact,unique;not null"`
@@ -36,9 +36,9 @@ func (ContactApply) TableName() string {
 // Session 会话
 type Session struct {
 	Id             int64     `gorm:"column:id;primaryKey;autoIncrement"`
-	UserId         int64     `gorm:"column:user_id;index;not null"`
-	PeerId         int64     `gorm:"column:peer_id;not null"`
-	SessionType    int32     `gorm:"column:session_type;default:1"` // 1=单聊 2=群聊
+	UserId         int64     `gorm:"column:user_id;uniqueIndex:idx_session_user_peer_type;not null"`
+	PeerId         int64     `gorm:"column:peer_id;uniqueIndex:idx_session_user_peer_type;not null"`
+	SessionType    int32     `gorm:"column:session_type;uniqueIndex:idx_session_user_peer_type;default:1"` // 1=单聊 2=群聊
 	SessionName    string    `gorm:"column:session_name;size:128"`
 	LastMsgId      int64     `gorm:"column:last_msg_id;default:0"`
 	LastMsgContent string    `gorm:"column:last_msg_content;size:512"`
@@ -75,7 +75,7 @@ type GroupMember struct {
 	Id        int64     `gorm:"column:id;primaryKey;autoIncrement"`
 	GroupId   int64     `gorm:"column:group_id;index:idx_group_user,unique;not null"`
 	UserId    int64     `gorm:"column:user_id;index:idx_group_user,unique;not null"`
-	Role      int32     `gorm:"column:role;default:0"` // 0=普通 1=管理员 2=群主
+	Role      int32     `gorm:"column:role;default:0"` // 0=普通成员 1=管理员 2=群主
 	Nickname  string    `gorm:"column:nickname;size:64"`
 	JoinedAt  time.Time `gorm:"column:joined_at"`
 	CreatedAt time.Time `gorm:"column:created_at"`
