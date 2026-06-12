@@ -1,0 +1,16 @@
+Name: gateway-api
+Host: 0.0.0.0
+Port: 8888
+Timeout: 30000
+
+UserRpc:
+  Target: localhost:9091
+MsgRpc:
+  Target: localhost:9092
+FriendRpc:
+  Target: localhost:9093
+FileRpc:
+  Target: localhost:9094
+Redis:
+  Host: localhost:6379
+  Pass: ""

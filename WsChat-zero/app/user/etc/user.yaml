@@ -1,0 +1,12 @@
+Name: user.rpc
+ListenOn: 0.0.0.0:9091
+Timeout: 30000
+
+Mysql:
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+BizRedis:
+  Host: localhost:6379
+  Pass: ""
+JwtAuth:
+  AccessSecret: ws-chat-zero-secret-key-2026
+  AccessExpire: 86400

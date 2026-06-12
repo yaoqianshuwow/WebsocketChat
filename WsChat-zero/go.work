@@ -1,0 +1,12 @@
+go 1.26.2
+
+use (
+	./app/file
+	./app/friend
+	./app/gateway
+	./app/msg-forward
+	./app/msg-store
+	./app/user
+	./app/voice
+	./pkg
+)

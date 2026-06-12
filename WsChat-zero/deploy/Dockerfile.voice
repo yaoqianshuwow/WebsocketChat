@@ -1,0 +1,16 @@
+FROM golang:1.26-alpine AS builder
+RUN apk add --no-cache build-base
+WORKDIR /ws-chat
+COPY go.work go.work.sum ./
+COPY proto/ proto/
+COPY pkg/ pkg/
+COPY app/voice/ app/voice/
+RUN CGO_ENABLED=0 go build -o /voice-rpc ./app/voice/
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=builder /voice-rpc /app/voice-rpc
+COPY app/voice/etc/ /app/etc/
+WORKDIR /app
+EXPOSE 9095
+CMD ["/app/voice-rpc", "-f", "/app/etc/voice.yaml"]

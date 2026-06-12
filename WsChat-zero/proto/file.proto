@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package file;
+option go_package = "./pb";
+
+import "common.proto";
+
+message UploadFileRequest {
+  bytes  data      = 1;
+  string file_name = 2;
+  int32  file_type = 3;
+  int64  user_id   = 4;
+}
+
+message UploadFileResponse {
+  int32  code      = 1;
+  string message   = 2;
+  string file_url  = 3;
+  int64  file_size = 4;
+}
+
+message GetFileRequest {
+  string file_url = 1;
+}
+
+message GetFileResponse {
+  int32  code      = 1;
+  string message   = 2;
+  bytes  data      = 3;
+  string file_name = 4;
+  int64  file_size = 5;
+}
+
+message DeleteFileRequest {
+  string file_url = 1;
+  int64  user_id  = 2;
+}
+
+message CommonResponse {
+  int32  code    = 1;
+  string message = 2;
+}
+
+service FileService {
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+  rpc GetFile(GetFileRequest) returns (GetFileResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (CommonResponse);
+}

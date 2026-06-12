@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # ── 基础设施 ──
+  mysql:
+    image: mysql:8.0
+    container_name: wschat-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "111111"
+      MYSQL_DATABASE: wechat_database
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - wschat-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: wschat-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - wschat-net
+
+  etcd:
+    image: bitnami/etcd:3.5
+    container_name: wschat-etcd
+    restart: always
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+    networks:
+      - wschat-net
+
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: wschat-kafka
+    restart: always
+    depends_on:
+      - etcd
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+    ports:
+      - "9092:9092"
+    networks:
+      - wschat-net
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: wschat-es
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - wschat-net
+
+  # ── 业务子服务 ──
+  user-rpc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.user
+    container_name: wschat-user
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
+      etcd:
+        condition: service_started
+    ports:
+      - "9091:9091"
+    networks:
+      - wschat-net
+
+  friend-rpc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.friend
+    container_name: wschat-friend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_started
+      etcd:
+        condition: service_started
+    ports:
+      - "9093:9093"
+    networks:
+      - wschat-net
+
+  file-rpc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.file
+    container_name: wschat-file
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_started
+      etcd:
+        condition: service_started
+    ports:
+      - "9094:9094"
+    networks:
+      - wschat-net
+    volumes:
+      - file-storage:/app/storage/files
+
+  voice-rpc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.voice
+    container_name: wschat-voice
+    restart: always
+    depends_on:
+      etcd:
+        condition: service_started
+    ports:
+      - "9095:9095"
+    networks:
+      - wschat-net
+
+  msg-forward:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.msg-forward
+    container_name: wschat-msg-forward
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_started
+      kafka:
+        condition: service_started
+      etcd:
+        condition: service_started
+    ports:
+      - "9092:9092"
+    networks:
+      - wschat-net
+
+  msg-store:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.msg-store
+    container_name: wschat-msg-store
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_started
+      kafka:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+    networks:
+      - wschat-net
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.gateway
+    container_name: wschat-gateway
+    restart: always
+    depends_on:
+      - user-rpc
+      - friend-rpc
+      - file-rpc
+      - msg-forward
+      - redis
+      - etcd
+    ports:
+      - "8888:8888"
+    networks:
+      - wschat-net
+
+volumes:
+  mysql-data:
+  redis-data:
+  es-data:
+  file-storage:
+
+networks:
+  wschat-net:
+    driver: bridge

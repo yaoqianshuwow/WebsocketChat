@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package friend;
+option go_package = "./pb";
+
+// ── 实体 ──
+message ContactInfo {
+  int64 id           = 1;
+  int64 user_id      = 2;
+  int64 contact_id   = 3;
+  int32 contact_type = 4;
+  int32 status       = 5;
+  int64 created_at   = 6;
+}
+
+message ContactApply {
+  int64  id          = 1;
+  int64  from_id     = 2;
+  int64  to_id       = 3;
+  int32  apply_type  = 4;
+  string remark      = 5;
+  int32  status      = 6;
+  int64  created_at  = 7;
+}
+
+message Session {
+  int64  id               = 1;
+  int64  user_id          = 2;
+  int64  peer_id          = 3;
+  int32  session_type     = 4;
+  string session_name     = 5;
+  int64  last_msg_id      = 6;
+  string last_msg_content = 7;
+  int64  last_msg_time    = 8;
+  int32  unread_count     = 9;
+  int64  created_at       = 10;
+}
+
+message GroupInfo {
+  int64  id           = 1;
+  string name         = 2;
+  string avatar       = 3;
+  int64  owner_id     = 4;
+  int32  member_count = 5;
+  int32  add_mode     = 6;
+  int32  status       = 7;
+  string notice       = 8;
+  int64  created_at   = 9;
+}
+
+message GroupMember {
+  int64  id        = 1;
+  int64  group_id  = 2;
+  int64  user_id   = 3;
+  int32  role      = 4;
+  string nickname  = 5;
+  int64  joined_at = 6;
+}
+
+// ── 请求 ──
+message ApplyContactRequest       { int64 from_id = 1; int64 to_id = 2; string remark = 3; }
+message PassContactApplyRequest   { int64 apply_id = 1; int64 user_id = 2; int32 status = 3; }
+message DeleteContactRequest      { int64 user_id = 1; int64 contact_id = 2; }
+message BlackContactRequest       { int64 user_id = 1; int64 contact_id = 2; }
+message GetContactInfoRequest     { int64 user_id = 1; int64 contact_id = 2; }
+message GetContactListRequest     { int64 user_id = 1; }
+message CreateSessionRequest      { int64 user_id = 1; int64 peer_id = 2; int32 session_type = 3; string session_name = 4; }
+message DeleteSessionRequest      { int64 session_id = 1; int64 user_id = 2; }
+message GetSessionListRequest     { int64 user_id = 1; int32 session_type = 2; }
+message CreateGroupRequest        { string group_name = 1; int64 owner_id = 2; repeated int64 member_ids = 3; }
+message DismissGroupRequest       { int64 group_id = 1; int64 user_id = 2; }
+message LeaveGroupRequest         { int64 group_id = 1; int64 user_id = 2; }
+message GetGroupInfoRequest       { int64 group_id = 1; }
+message GetGroupMemberListRequest { int64 group_id = 1; }
+message RemoveGroupMembersRequest { int64 group_id = 1; int64 operator_id = 2; repeated int64 member_ids = 3; }
+message UpdateGroupInfoRequest    { int64 group_id = 1; string name = 2; string avatar = 3; string notice = 4; int32 add_mode = 5; }
+message SetGroupsStatusRequest    { repeated int64 group_ids = 1; int32 status = 2; }
+message DeleteGroupsRequest       { repeated int64 group_ids = 1; }
+
+// ── 响应 ──
+message ContactInfoResponse       { int32 code = 1; string message = 2; ContactInfo data = 3; }
+message ContactListResponse       { int32 code = 1; string message = 2; repeated ContactInfo data = 3; }
+message SessionResponse           { int32 code = 1; string message = 2; Session data = 3; }
+message SessionListResponse       { int32 code = 1; string message = 2; repeated Session data = 3; }
+message GroupInfoResponse         { int32 code = 1; string message = 2; GroupInfo data = 3; }
+message GroupListResponse         { int32 code = 1; string message = 2; repeated GroupInfo data = 3; }
+message GroupMemberListResponse   { int32 code = 1; string message = 2; repeated GroupMember data = 3; }
+message ApplyListResponse         { int32 code = 1; string message = 2; repeated ContactApply data = 3; }
+message CommonResponse            { int32 code = 1; string message = 2; }
+
+// ── 服务 ──
+service FriendService {
+  rpc GetContactList(GetContactListRequest) returns (ContactListResponse);
+  rpc GetContactInfo(GetContactInfoRequest) returns (ContactInfoResponse);
+  rpc ApplyContact(ApplyContactRequest) returns (CommonResponse);
+  rpc PassContactApply(PassContactApplyRequest) returns (CommonResponse);
+  rpc DeleteContact(DeleteContactRequest) returns (CommonResponse);
+  rpc BlackContact(BlackContactRequest) returns (CommonResponse);
+  rpc GetApplyList(GetContactListRequest) returns (ApplyListResponse);
+
+  rpc CreateSession(CreateSessionRequest) returns (SessionResponse);
+  rpc GetSessionList(GetSessionListRequest) returns (SessionListResponse);
+  rpc DeleteSession(DeleteSessionRequest) returns (CommonResponse);
+
+  rpc CreateGroup(CreateGroupRequest) returns (GroupInfoResponse);
+  rpc GetGroupInfo(GetGroupInfoRequest) returns (GroupInfoResponse);
+  rpc GetGroupInfoList(GetContactListRequest) returns (GroupListResponse);
+  rpc UpdateGroupInfo(UpdateGroupInfoRequest) returns (CommonResponse);
+  rpc SetGroupsStatus(SetGroupsStatusRequest) returns (CommonResponse);
+  rpc DeleteGroups(DeleteGroupsRequest) returns (CommonResponse);
+  rpc GetGroupMemberList(GetGroupMemberListRequest) returns (GroupMemberListResponse);
+  rpc DismissGroup(DismissGroupRequest) returns (CommonResponse);
+  rpc LeaveGroup(LeaveGroupRequest) returns (CommonResponse);
+  rpc RemoveGroupMembers(RemoveGroupMembersRequest) returns (CommonResponse);
+}

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package common;
+option go_package = "./pb";
+
+// 通用空请求/响应
+message Empty {}
+
+// 通用分页参数
+message PageRequest {
+  int64 page = 1;
+  int64 size = 2;
+}
+
+// 通用分页响应
+message PageResponse {
+  int64 total = 1;
+  int64 page  = 2;
+  int64 size  = 3;
+}
+
+// 通用返回状态
+message StatusResult {
+  int32  code    = 1; // 0=成功, 1=业务错误, -1=系统错误
+  string message = 2;
+}

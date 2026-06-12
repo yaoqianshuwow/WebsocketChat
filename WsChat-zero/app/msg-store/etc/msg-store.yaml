@@ -1,0 +1,23 @@
+Name: msg-store
+Host: 0.0.0.0
+Port: 8084
+
+Log:
+  Level: info
+  Encoding: plain
+
+Kafka:
+  Brokers:
+    - localhost:9092
+  ChatTopic: chat_message
+  LoginTopic: login
+  LogoutTopic: logout
+  GroupId: msg-store-group
+
+Mysql:
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+
+ES:
+  Addresses:
+    - http://localhost:9200
+  Index: chat_messages

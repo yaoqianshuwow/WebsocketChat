@@ -1,0 +1,16 @@
+FROM golang:1.26-alpine AS builder
+RUN apk add --no-cache build-base
+WORKDIR /ws-chat
+COPY go.work go.work.sum ./
+COPY proto/ proto/
+COPY pkg/ pkg/
+COPY app/friend/ app/friend/
+RUN CGO_ENABLED=0 go build -o /friend-rpc ./app/friend/
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=builder /friend-rpc /app/friend-rpc
+COPY app/friend/etc/ /app/etc/
+WORKDIR /app
+EXPOSE 9093
+CMD ["/app/friend-rpc", "-f", "/app/etc/friend.yaml"]

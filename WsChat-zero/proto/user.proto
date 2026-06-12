@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package user;
+option go_package = "./pb";
+
+import "common.proto";
+
+// 用户实体
+message UserInfo {
+  int64  id        = 1;
+  string username  = 2;
+  string phone     = 3;
+  string avatar    = 4;
+  string nickname  = 5;
+  string sex       = 6;
+  int32  age       = 7;
+  string bio       = 8;
+  int32  status    = 9;
+  int32  role      = 10;
+  int64  created_at = 11;
+  int64  updated_at = 12;
+}
+
+// 请求
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string phone    = 3;
+  string nickname = 4;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message SmsLoginRequest {
+  string phone = 1;
+  string code  = 2;
+}
+
+message SendSmsCodeRequest {
+  string phone = 1;
+}
+
+message GetUserInfoRequest {
+  int64 user_id = 1;
+}
+
+message GetUserInfoListRequest {
+  repeated int64 user_ids = 1;
+}
+
+message UpdateUserInfoRequest {
+  int64  user_id  = 1;
+  string nickname = 2;
+  string avatar   = 3;
+  string sex      = 4;
+  int32  age      = 5;
+  string bio      = 6;
+}
+
+message AbleUsersRequest   { repeated int64 user_ids = 1; }
+message DisableUsersRequest { repeated int64 user_ids = 1; }
+message DeleteUsersRequest  { repeated int64 user_ids = 1; }
+message SetAdminRequest     { int64 user_id = 1; int32 role = 2; }
+
+message SearchUsersRequest {
+  string keyword = 1;
+  int64  page    = 2;
+  int64  size    = 3;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message WsLogoutRequest {
+  int64 user_id = 1;
+}
+
+// 响应
+message LoginResponse {
+  int32    code      = 1;
+  string   message   = 2;
+  string   token     = 3;
+  UserInfo user_info = 4;
+}
+
+message RegisterResponse {
+  int32  code    = 1;
+  string message = 2;
+  int64  user_id = 3;
+}
+
+message UserInfoResponse {
+  int32    code    = 1;
+  string   message = 2;
+  UserInfo data    = 3;
+}
+
+message UserInfoListResponse {
+  int32           code    = 1;
+  string          message = 2;
+  repeated UserInfo data  = 3;
+}
+
+message CommonResponse {
+  int32  code    = 1;
+  string message = 2;
+}
+
+message SearchUsersResponse {
+  int32           code    = 1;
+  string          message = 2;
+  repeated UserInfo data  = 3;
+  int64           total   = 4;
+}
+
+message ValidateTokenResponse {
+  int32  code     = 1;
+  string message  = 2;
+  int64  user_id  = 3;
+  string username = 4;
+}
+
+// 服务
+service UserService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc SendSmsCode(SendSmsCodeRequest) returns (CommonResponse);
+  rpc SmsLogin(SmsLoginRequest) returns (LoginResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUserInfo(GetUserInfoRequest) returns (UserInfoResponse);
+  rpc GetUserInfoList(GetUserInfoListRequest) returns (UserInfoListResponse);
+  rpc UpdateUserInfo(UpdateUserInfoRequest) returns (CommonResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc AbleUsers(AbleUsersRequest) returns (CommonResponse);
+  rpc DisableUsers(DisableUsersRequest) returns (CommonResponse);
+  rpc DeleteUsers(DeleteUsersRequest) returns (CommonResponse);
+  rpc SetAdmin(SetAdminRequest) returns (CommonResponse);
+  rpc WsLogout(WsLogoutRequest) returns (CommonResponse);
+}

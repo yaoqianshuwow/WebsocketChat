@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package voice;
+option go_package = "./pb";
+
+message RecognizeRequest {
+  bytes  audio_data   = 1;
+  string audio_format = 2;
+  int32  sample_rate  = 3;
+  int64  user_id      = 4;
+  int64  msg_id       = 5;
+}
+
+message RecognizeResponse {
+  int32  code    = 1;
+  string message = 2;
+  string text    = 3;
+  int64  user_id = 4;
+  int64  msg_id  = 5;
+}
+
+service VoiceService {
+  rpc Recognize(RecognizeRequest) returns (RecognizeResponse);
+}

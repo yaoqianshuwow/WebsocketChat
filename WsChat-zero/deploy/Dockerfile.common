@@ -1,0 +1,29 @@
+# 多阶段构建 - 通用 Dockerfile
+# 构建时传入 SERVICE 变量指定服务名: docker build --build-arg SERVICE=friend ...
+ARG SERVICE
+
+# 阶段 1：编译
+FROM golang:1.26-alpine AS builder
+RUN apk add --no-cache build-base
+
+WORKDIR /ws-chat
+COPY go.work go.work.sum ./
+COPY proto/ proto/
+COPY pkg/ pkg/
+
+ARG SERVICE
+COPY app/${SERVICE}/ app/${SERVICE}/
+
+RUN cd app/${SERVICE} && CGO_ENABLED=0 go build -o /service .
+
+# 阶段 2：运行
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+
+ARG SERVICE
+COPY --from=builder /service /app/service
+COPY app/${SERVICE}/etc/ /app/etc/
+
+WORKDIR /app
+EXPOSE 8080
+CMD ["/app/service", "-f", "/app/etc/service.yaml"]

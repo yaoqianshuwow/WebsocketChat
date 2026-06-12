@@ -1,0 +1,20 @@
+# 阶段 1：编译
+FROM golang:1.26-alpine AS builder
+RUN apk add --no-cache build-base
+
+WORKDIR /ws-chat
+COPY go.work go.work.sum ./
+COPY proto/ proto/
+COPY pkg/ pkg/
+COPY app/user/ app/user/
+
+RUN CGO_ENABLED=0 go build -o /user-rpc ./app/user/
+
+# 阶段 2：运行
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=builder /user-rpc /app/user-rpc
+COPY app/user/etc/ /app/etc/
+WORKDIR /app
+EXPOSE 9091
+CMD ["/app/user-rpc", "-f", "/app/etc/user.yaml"]

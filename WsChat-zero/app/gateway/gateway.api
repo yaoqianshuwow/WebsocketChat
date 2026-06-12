@@ -1,0 +1,384 @@
+syntax = "v1"
+
+info (
+	title:   "WebSocket Chat Gateway API"
+	desc:    "WebSocket Chat 网关服务 - 面向客户端的 HTTP/WebSocket 入口"
+	author:  "WsChat-zero"
+	version: "v1"
+)
+
+type (
+	// ── 用户认证 ──
+	LoginReq {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	LoginResp {
+		Code     int32  `json:"code"`
+		Message  string `json:"message"`
+		Token    string `json:"token"`
+		UserId   int64  `json:"user_id"`
+		Nickname string `json:"nickname"`
+		Avatar   string `json:"avatar"`
+	}
+	RegisterReq {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Phone    string `json:"phone,optional"`
+		Nickname string `json:"nickname,optional"`
+	}
+	RegisterResp {
+		Code    int32  `json:"code"`
+		Message string `json:"message"`
+		UserId  int64  `json:"user_id"`
+	}
+	SmsCodeReq {
+		Phone string `json:"phone"`
+	}
+	SmsLoginReq {
+		Phone string `json:"phone"`
+		Code  string `json:"code"`
+	}
+	// ── 用户信息 ──
+	UpdateUserInfoReq {
+		Nickname string `json:"nickname,optional"`
+		Avatar   string `json:"avatar,optional"`
+		Sex      string `json:"sex,optional"`
+		Age      int32  `json:"age,optional"`
+		Bio      string `json:"bio,optional"`
+	}
+	GetUserInfoReq {
+		UserId int64 `json:"userId,optional"`
+	}
+	GetUserInfoListReq {
+		UserIds []int64 `json:"userIds"`
+	}
+	SearchUsersReq {
+		Keyword string `json:"keyword"`
+		Page    int64  `json:"page,optional"`
+		Size    int64  `json:"size,optional"`
+	}
+	UserInfoResp {
+		Code     int32  `json:"code"`
+		Message  string `json:"message"`
+		UserId   int64  `json:"user_id,optional"`
+		Username string `json:"username,optional"`
+		Nickname string `json:"nickname,optional"`
+		Avatar   string `json:"avatar,optional"`
+		Sex      string `json:"sex,optional"`
+		Age      int32  `json:"age,optional"`
+		Bio      string `json:"bio,optional"`
+		Phone    string `json:"phone,optional"`
+		Status   int32  `json:"status,optional"`
+		Role     int32  `json:"role,optional"`
+	}
+	UserInfoListResp {
+		Code    int32          `json:"code"`
+		Message string         `json:"message"`
+		Data    []UserInfoResp `json:"data,optional"`
+	}
+	SearchUsersResp {
+		Code    int32          `json:"code"`
+		Message string         `json:"message"`
+		Data    []UserInfoResp `json:"data,optional"`
+		Total   int64          `json:"total"`
+	}
+	// ── 通用 ──
+	CommonResp {
+		Code    int32  `json:"code"`
+		Message string `json:"message"`
+	}
+	IdsReq {
+		Ids []int64 `json:"ids"`
+	}
+	// ── 群组 ──
+	CreateGroupReq {
+		GroupName string  `json:"groupName"`
+		MemberIds []int64 `json:"memberIds,optional"`
+	}
+	GroupInfoResp {
+		Code        int32  `json:"code"`
+		Message     string `json:"message"`
+		GroupId     int64  `json:"group_id,optional"`
+		Name        string `json:"name,optional"`
+		Avatar      string `json:"avatar,optional"`
+		OwnerId     int64  `json:"owner_id,optional"`
+		MemberCount int32  `json:"member_count,optional"`
+		AddMode     int32  `json:"add_mode,optional"`
+		Status      int32  `json:"status,optional"`
+		Notice      string `json:"notice,optional"`
+	}
+	GroupListResp {
+		Code    int32           `json:"code"`
+		Message string          `json:"message"`
+		Data    []GroupInfoResp `json:"data,optional"`
+	}
+	UpdateGroupInfoReq {
+		GroupId int64  `json:"groupId"`
+		Name    string `json:"name,optional"`
+		Avatar  string `json:"avatar,optional"`
+		Notice  string `json:"notice,optional"`
+		AddMode int32  `json:"addMode,optional"`
+	}
+	GroupIdReq {
+		GroupId int64 `json:"groupId"`
+	}
+	GroupMemberListResp {
+		Code       int32      `json:"code"`
+		Message    string     `json:"message"`
+		MemberList []MemberVo `json:"memberList,optional"`
+	}
+	MemberVo {
+		UserId   int64  `json:"userId"`
+		Nickname string `json:"nickname"`
+		Role     int32  `json:"role"`
+		Avatar   string `json:"avatar,optional"`
+	}
+	RemoveMembersReq {
+		GroupId   int64   `json:"groupId"`
+		MemberIds []int64 `json:"memberIds"`
+	}
+	// ── 会话 ──
+	CreateSessionReq {
+		PeerId      int64  `json:"peerId"`
+		SessionType int32  `json:"sessionType"` // 1=单聊 2=群聊
+		SessionName string `json:"sessionName,optional"`
+	}
+	SessionResp {
+		Code        int32  `json:"code"`
+		Message     string `json:"message"`
+		SessionId   int64  `json:"sessionId,optional"`
+		PeerId      int64  `json:"peerId,optional"`
+		SessionType int32  `json:"sessionType,optional"`
+		SessionName string `json:"sessionName,optional"`
+	}
+	DeleteSessionReq {
+		SessionId int64 `json:"sessionId"`
+	}
+	SessionListResp {
+		Code    int32       `json:"code"`
+		Message string      `json:"message"`
+		Data    []SessionVo `json:"data,optional"`
+	}
+	SessionVo {
+		SessionId      int64  `json:"sessionId"`
+		PeerId         int64  `json:"peerId"`
+		SessionType    int32  `json:"sessionType"`
+		SessionName    string `json:"sessionName"`
+		LastMsgContent string `json:"lastMsgContent,optional"`
+		LastMsgTime    int64  `json:"lastMsgTime,optional"`
+		UnreadCount    int32  `json:"unreadCount"`
+		Avatar         string `json:"avatar,optional"`
+	}
+	// ── 联系人 ──
+	ApplyContactReq {
+		ToId   int64  `json:"toId"`
+		Remark string `json:"remark,optional"`
+	}
+	PassContactApplyReq {
+		ApplyId int64 `json:"applyId"`
+		Status  int32 `json:"status"` // 1=同意 2=拒绝
+	}
+	ContactInfoReq {
+		ContactId int64 `json:"contactId"`
+	}
+	ContactListResp {
+		Code    int32       `json:"code"`
+		Message string      `json:"message"`
+		Data    []ContactVo `json:"data,optional"`
+	}
+	ContactVo {
+		ContactId   int64  `json:"contactId"`
+		ContactType int32  `json:"contactType"` // 1=好友 2=群聊
+		Nickname    string `json:"nickname,optional"`
+		Avatar      string `json:"avatar,optional"`
+		Status      int32  `json:"status"`
+	}
+	ApplyListResp {
+		Code    int32     `json:"code"`
+		Message string    `json:"message"`
+		Data    []ApplyVo `json:"data,optional"`
+	}
+	ApplyVo {
+		ApplyId  int64  `json:"applyId"`
+		FromId   int64  `json:"fromId"`
+		Nickname string `json:"nickname,optional"`
+		Remark   string `json:"remark,optional"`
+		Status   int32  `json:"status"`
+	}
+	// ── 消息 ──
+	GetMessageListReq {
+		SessionId int64 `json:"sessionId"`
+		Page      int64 `json:"page,optional"`
+		Size      int64 `json:"size,optional"`
+		BeforeId  int64 `json:"beforeId,optional"`
+	}
+	GetGroupMessageReq {
+		GroupId  int64 `json:"groupId"`
+		Page     int64 `json:"page,optional"`
+		Size     int64 `json:"size,optional"`
+		BeforeId int64 `json:"beforeId,optional"`
+	}
+	MessageListResp {
+		Code    int32       `json:"code"`
+		Message string      `json:"message"`
+		Data    []MessageVo `json:"data,optional"`
+		Total   int64       `json:"total"`
+	}
+	MessageVo {
+		MsgId      int64  `json:"msgId"`
+		SenderId   int64  `json:"senderId"`
+		ReceiverId int64  `json:"receiverId"`
+		MsgType    int32  `json:"msgType"`
+		Content    string `json:"content,optional"`
+		FileUrl    string `json:"fileUrl,optional"`
+		FileName   string `json:"fileName,optional"`
+		FileSize   int64  `json:"fileSize,optional"`
+		CreatedAt  int64  `json:"createdAt"`
+	}
+)
+
+// ────────── 路由定义 ──────────
+@server (
+	group: User
+)
+service gateway-api {
+	@handler Login
+	post /api/v1/login (LoginReq) returns (LoginResp)
+
+	@handler Register
+	post /api/v1/register (RegisterReq) returns (RegisterResp)
+
+	@handler SendSmsCode
+	post /api/v1/user/sendSmsCode (SmsCodeReq) returns (CommonResp)
+
+	@handler SmsLogin
+	post /api/v1/user/smsLogin (SmsLoginReq) returns (LoginResp)
+}
+
+@server (
+	group:      UserInfo
+	middleware: Auth
+)
+service gateway-api {
+	@handler GetUserInfo
+	post /api/v1/user/getUserInfo (GetUserInfoReq) returns (UserInfoResp)
+
+	@handler UpdateUserInfo
+	post /api/v1/user/updateUserInfo (UpdateUserInfoReq) returns (CommonResp)
+
+	@handler GetUserInfoList
+	post /api/v1/user/getUserInfoList (GetUserInfoListReq) returns (UserInfoListResp)
+
+	@handler SearchUsers
+	post /api/v1/user/searchUsers (SearchUsersReq) returns (SearchUsersResp)
+
+	@handler AbleUsers
+	post /api/v1/user/ableUsers (IdsReq) returns (CommonResp)
+
+	@handler DisableUsers
+	post /api/v1/user/disableUsers (IdsReq) returns (CommonResp)
+
+	@handler DeleteUsers
+	post /api/v1/user/deleteUsers (IdsReq) returns (CommonResp)
+
+	@handler SetAdmin
+	post /api/v1/user/setAdmin (IdsReq) returns (CommonResp)
+}
+
+@server (
+	group:      Group
+	middleware: Auth
+)
+service gateway-api {
+	@handler CreateGroup
+	post /api/v1/group/createGroup (CreateGroupReq) returns (GroupInfoResp)
+
+	@handler GetGroupInfo
+	post /api/v1/group/getGroupInfo (GroupIdReq) returns (GroupInfoResp)
+
+	@handler GetGroupInfoList
+	post /api/v1/group/loadMyGroup (CommonResp) returns (GroupListResp)
+
+	@handler GetGroupMemberList
+	post /api/v1/group/getGroupMemberList (GroupIdReq) returns (GroupMemberListResp)
+
+	@handler UpdateGroupInfo
+	post /api/v1/group/updateGroupInfo (UpdateGroupInfoReq) returns (CommonResp)
+
+	@handler DismissGroup
+	post /api/v1/group/dismissGroup (GroupIdReq) returns (CommonResp)
+
+	@handler LeaveGroup
+	post /api/v1/group/leaveGroup (GroupIdReq) returns (CommonResp)
+
+	@handler RemoveGroupMembers
+	post /api/v1/group/removeGroupMembers (RemoveMembersReq) returns (CommonResp)
+
+	@handler SetGroupsStatus
+	post /api/v1/group/setGroupsStatus (GroupIdReq) returns (CommonResp)
+
+	@handler DeleteGroups
+	post /api/v1/group/deleteGroups (IdsReq) returns (CommonResp)
+}
+
+@server (
+	group:      Session
+	middleware: Auth
+)
+service gateway-api {
+	@handler CreateSession
+	post /api/v1/session/openSession (CreateSessionReq) returns (SessionResp)
+
+	@handler GetSessionList
+	post /api/v1/session/getUserSessionList (CommonResp) returns (SessionListResp)
+
+	@handler DeleteSession
+	post /api/v1/session/deleteSession (DeleteSessionReq) returns (CommonResp)
+}
+
+@server (
+	group:      Contact
+	middleware: Auth
+)
+service gateway-api {
+	@handler GetContactList
+	post /api/v1/contact/getUserList (CommonResp) returns (ContactListResp)
+
+	@handler GetContactInfo
+	post /api/v1/contact/getContactInfo (ContactInfoReq) returns (ContactListResp)
+
+	@handler ApplyContact
+	post /api/v1/contact/applyContact (ApplyContactReq) returns (CommonResp)
+
+	@handler PassContactApply
+	post /api/v1/contact/passContactApply (PassContactApplyReq) returns (CommonResp)
+
+	@handler DeleteContact
+	post /api/v1/contact/deleteContact (ContactInfoReq) returns (CommonResp)
+
+	@handler BlackContact
+	post /api/v1/contact/blackContact (ContactInfoReq) returns (CommonResp)
+
+	@handler GetApplyList
+	post /api/v1/contact/getNewContactList (CommonResp) returns (ApplyListResp)
+}
+
+@server (
+	group:      Message
+	middleware: Auth
+)
+service gateway-api {
+	@handler GetMessageList
+	post /api/v1/message/getMessageList (GetMessageListReq) returns (MessageListResp)
+
+	@handler GetGroupMessageList
+	post /api/v1/message/getGroupMessageList (GetGroupMessageReq) returns (MessageListResp)
+
+	@handler UploadFile
+	post /api/v1/message/uploadFile returns (CommonResp)
+
+	@handler UploadAvatar
+	post /api/v1/message/uploadAvatar returns (CommonResp)
+}
+

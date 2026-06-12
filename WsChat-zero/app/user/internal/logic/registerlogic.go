@@ -1,0 +1,60 @@
+package logic
+
+import (
+	"context"
+	"crypto/md5"
+	"fmt"
+	"time"
+
+	"github.com/your-org/ws-chat-zero/app/user/internal/model"
+	"github.com/your-org/ws-chat-zero/app/user/internal/svc"
+	"github.com/your-org/ws-chat-zero/app/user/pb/pb"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+type RegisterLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+	logx.Logger
+}
+
+func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RegisterLogic {
+	return &RegisterLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
+	}
+}
+
+func (l *RegisterLogic) Register(in *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	var count int64
+	l.svcCtx.DB.Model(&model.UserInfo{}).Where("username = ?", in.Username).Count(&count)
+	if count > 0 {
+		return &pb.RegisterResponse{Code: 1, Message: "用户名已存在"}, nil
+	}
+
+	pwd := fmt.Sprintf("%x", md5.Sum([]byte(in.Password)))
+	user := model.UserInfo{
+		Username:  in.Username,
+		Password:  pwd,
+		Phone:     in.Phone,
+		Nickname:  in.Nickname,
+		Avatar:    "/static/avatars/default.png",
+		Status:    0,
+		Role:      0,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := l.svcCtx.DB.Create(&user).Error; err != nil {
+		logx.Errorf("register error: %v", err)
+		return &pb.RegisterResponse{Code: -1, Message: "注册失败"}, nil
+	}
+
+	return &pb.RegisterResponse{
+		Code:    0,
+		Message: "注册成功",
+		UserId:  user.Id,
+	}, nil
+}

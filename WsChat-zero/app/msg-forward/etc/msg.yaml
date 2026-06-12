@@ -1,0 +1,11 @@
+Name: msg.rpc
+ListenOn: 0.0.0.0:9092
+Timeout: 30000
+
+Kafka:
+  Brokers:
+  - 127.0.0.1:9092
+  ChatTopic: chat-messages
+
+Mysql:
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
