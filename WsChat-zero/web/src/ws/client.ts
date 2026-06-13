@@ -1,5 +1,4 @@
 import { useChatStore } from '@/store/chat';
-import type { MessageVo } from '@/types';
 
 type WsMessageHandler = (msg: WsMessage) => void;
 
@@ -21,11 +20,12 @@ class WsClient {
   connect(token: string) {
     this.shouldReconnect = true;
     this.reconnectAttempts = 0;
+    useChatStore.getState().setWsStatus('connecting');
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     // 开发环境直连代理
-    this.url = `ws://localhost:8888/wss?token=${token}`;
+    this.url = `${protocol}//${host}/wss?token=${token}`;
 
     this.createConnection();
   }
@@ -39,6 +39,7 @@ class WsClient {
       this.ws = new WebSocket(this.url);
     } catch (e) {
       console.error('WS connect error:', e);
+      useChatStore.getState().setWsStatus('error', '连接建立失败');
       this.scheduleReconnect();
       return;
     }
@@ -46,6 +47,7 @@ class WsClient {
     this.ws.onopen = () => {
       console.log('WS connected');
       this.reconnectAttempts = 0;
+      useChatStore.getState().setWsStatus('connected');
       this.startHeartbeat();
     };
 
@@ -61,6 +63,7 @@ class WsClient {
     this.ws.onclose = () => {
       console.log('WS disconnected');
       this.stopHeartbeat();
+       useChatStore.getState().setWsStatus(this.shouldReconnect ? 'reconnecting' : 'disconnected');
       if (this.shouldReconnect) {
         this.scheduleReconnect();
       }
@@ -68,20 +71,24 @@ class WsClient {
 
     this.ws.onerror = (e) => {
       console.error('WS error:', e);
+      useChatStore.getState().setWsStatus('error');
     };
   }
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log('WS max reconnect attempts reached');
+      useChatStore.getState().setWsStatus('disconnected', '重连失败');
       return;
     }
 
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
     this.reconnectAttempts++;
+    useChatStore.getState().setWsStatus('reconnecting', `正在重连（第 ${this.reconnectAttempts} 次）`);
 
     this.reconnectTimer = setTimeout(() => {
       console.log(`WS reconnecting (attempt ${this.reconnectAttempts})...`);
+      useChatStore.getState().setWsStatus('connecting', '重新建立连接');
       this.createConnection();
     }, delay);
   }
@@ -149,6 +156,7 @@ class WsClient {
       this.ws.close();
       this.ws = null;
     }
+    useChatStore.getState().setWsStatus('disconnected');
   }
 }
 

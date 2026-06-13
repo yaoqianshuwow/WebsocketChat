@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
 import { useChatStore } from '@/store/chat';
+import { useMobile } from '@/hooks/useMobile';
 
 const navItems = [
   { path: '/chat', label: '聊天' },
@@ -12,6 +13,7 @@ const navItems = [
 export default function Layout() {
   const { userInfo, logout } = useAuthStore();
   const { wsState, wsHint } = useChatStore();
+  const isMobile = useMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,70 +35,104 @@ export default function Layout() {
   };
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <div style={styles.brandMark}>W</div>
-          <div>
-            <div style={styles.brandTitle}>WsChat</div>
-            <div style={styles.brandSub}>即时沟通工作台</div>
-          </div>
-        </div>
-
-        <nav style={styles.nav}>
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              type="button"
-              style={{
-                ...styles.navItem,
-                ...(currentPath === item.path ? styles.navItemActive : {}),
-              }}
-              onClick={() => navigate(item.path)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div style={styles.statusCard}>
-          <div style={styles.statusLabel}>连接状态</div>
-          <div style={styles.statusValue}>{wsHint}</div>
-          <div style={styles.statusMeta}>{wsState}</div>
-        </div>
-      </aside>
-
-      <main style={styles.main}>
-        <header style={styles.topbar}>
-          <div>
-            <div style={styles.topTitle}>WsChat</div>
-            <div style={styles.topSub}>联系人、会话和群组已接入</div>
-          </div>
-
-          <div style={styles.userArea} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.userChip}>
-              <div style={styles.avatar}>{(userInfo?.nickname || userInfo?.username || 'U').charAt(0)}</div>
-              <div style={styles.userMeta}>
-                <div style={styles.userName}>{userInfo?.nickname || userInfo?.username || '用户'}</div>
-                <div style={styles.userDesc}>在线</div>
-              </div>
+    <div style={{ ...styles.shell, ...(isMobile ? styles.shellMobile : {}) }}>
+      {!isMobile && (
+        <aside style={styles.sidebar}>
+          <div style={styles.brand}>
+            <div style={styles.brandMark}>W</div>
+            <div>
+              <div style={styles.brandTitle}>WsChat</div>
+              <div style={styles.brandSub}>即时沟通工作台</div>
             </div>
-            <button type="button" style={styles.menuBtn} onClick={() => setMenuOpen((v) => !v)}>
-              菜单
-            </button>
-            {menuOpen && (
-              <div style={styles.menu}>
-                <button type="button" style={styles.menuItem} onClick={handleLogout}>
-                  退出登录
-                </button>
-              </div>
-            )}
           </div>
-        </header>
 
-        <section style={styles.content}>
+          <nav style={styles.nav}>
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                style={{
+                  ...styles.navItem,
+                  ...(currentPath === item.path ? styles.navItemActive : {}),
+                }}
+                onClick={() => navigate(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div style={styles.statusCard}>
+            <div style={styles.statusLabel}>连接状态</div>
+            <div style={styles.statusRow}>
+              <span
+                style={{
+                  ...styles.statusDot,
+                  ...(wsState === 'connected'
+                    ? styles.statusDotOnline
+                    : wsState === 'reconnecting' || wsState === 'connecting'
+                      ? styles.statusDotBusy
+                      : styles.statusDotOffline),
+                }}
+              />
+              <div style={styles.statusValue}>{wsHint}</div>
+            </div>
+            <div style={styles.statusMeta}>{wsState}</div>
+          </div>
+        </aside>
+      )}
+
+      <main style={{ ...styles.main, ...(isMobile ? styles.mainMobile : {}) }}>
+        {!isMobile && (
+          <header style={styles.topbar}>
+            <div style={styles.topbarInfo}>
+              <div style={styles.topTitle}>WsChat</div>
+              <div style={styles.topSub}>联系人、会话和群组已接入</div>
+            </div>
+
+            <div style={styles.userArea} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.userChip}>
+                <div style={styles.avatar}>{(userInfo?.nickname || userInfo?.username || 'U').charAt(0)}</div>
+                <div style={styles.userMeta}>
+                  <div style={styles.userName}>{userInfo?.nickname || userInfo?.username || '用户'}</div>
+                  <div style={styles.userDesc}>在线</div>
+                </div>
+              </div>
+              <button type="button" style={styles.menuBtn} onClick={() => setMenuOpen((v) => !v)}>
+                菜单
+              </button>
+              {menuOpen && (
+                <div style={styles.menu}>
+                  <button type="button" style={styles.menuItem} onClick={handleLogout}>
+                    退出登录
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+        )}
+
+        <section style={{ ...styles.content, ...(isMobile ? styles.contentMobile : {}) }}>
           <Outlet />
         </section>
+
+        {isMobile && (
+          <nav style={styles.bottomNav}>
+            {navItems.map((item) => (
+              <button
+                key={item.path}
+                type="button"
+                style={{
+                  ...styles.bottomNavItem,
+                  ...(currentPath === item.path ? styles.bottomNavItemActive : {}),
+                }}
+                onClick={() => navigate(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        )}
       </main>
     </div>
   );
@@ -104,36 +140,45 @@ export default function Layout() {
 
 const styles: Record<string, React.CSSProperties> = {
   shell: {
-    minHeight: '100vh',
+    height: '100vh',
     display: 'grid',
-    gridTemplateColumns: '280px minmax(0, 1fr)',
+    gridTemplateColumns: '236px minmax(0, 1fr)',
     background: 'linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%)',
+    overflow: 'hidden',
+    width: 'min(1320px, calc(100vw - 72px))',
+    margin: '0 auto',
+    boxShadow: '0 24px 60px rgba(31, 64, 122, 0.08)',
+  },
+  shellMobile: {
+    width: '100%',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    boxShadow: 'none',
   },
   sidebar: {
-    padding: 18,
+    padding: 16,
     borderRight: '1px solid #dbe7fb',
     background: '#fff',
     display: 'flex',
     flexDirection: 'column',
-    gap: 16,
+    gap: 14,
   },
   brand: { display: 'flex', alignItems: 'center', gap: 12 },
   brandMark: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     display: 'grid',
     placeItems: 'center',
     background: '#4a90d9',
     color: '#fff',
     fontWeight: 800,
   },
-  brandTitle: { fontSize: 18, fontWeight: 800, color: '#1f2d3d' },
+  brandTitle: { fontSize: 16, fontWeight: 800, color: '#1f2d3d' },
   brandSub: { marginTop: 4, fontSize: 12, color: '#7a869a' },
   nav: { display: 'grid', gap: 10 },
   navItem: {
-    height: 46,
-    borderRadius: 12,
+    height: 42,
+    borderRadius: 10,
     border: '1px solid #dbe7fb',
     background: '#f7fbff',
     color: '#456',
@@ -152,9 +197,15 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #dbe7fb',
   },
   statusLabel: { fontSize: 12, color: '#7a869a' },
-  statusValue: { marginTop: 6, fontSize: 14, fontWeight: 700, color: '#1f2d3d' },
+  statusRow: { marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 },
+  statusDot: { width: 10, height: 10, borderRadius: 999, display: 'inline-block' },
+  statusDotOnline: { background: '#13c26b', boxShadow: '0 0 0 4px rgba(19,194,107,0.16)' },
+  statusDotBusy: { background: '#ffb020', boxShadow: '0 0 0 4px rgba(255,176,32,0.16)' },
+  statusDotOffline: { background: '#a0aec0', boxShadow: '0 0 0 4px rgba(160,174,192,0.14)' },
+  statusValue: { fontSize: 14, fontWeight: 700, color: '#1f2d3d' },
   statusMeta: { marginTop: 4, fontSize: 12, color: '#7a869a', textTransform: 'uppercase' },
-  main: { minWidth: 0, display: 'flex', flexDirection: 'column' },
+  main: { minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' },
+  mainMobile: { width: '100%' },
   topbar: {
     height: 64,
     padding: '0 20px',
@@ -165,6 +216,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
     position: 'relative',
   },
+  topbarInfo: { minWidth: 0 },
   topTitle: { fontSize: 20, fontWeight: 800 },
   topSub: { marginTop: 4, fontSize: 12, opacity: 0.9 },
   userArea: { display: 'flex', alignItems: 'center', gap: 10, position: 'relative' },
@@ -222,5 +274,38 @@ const styles: Record<string, React.CSSProperties> = {
   content: {
     flex: 1,
     minHeight: 0,
+    display: 'flex',
+    overflow: 'hidden',
+  },
+  contentMobile: {
+    paddingBottom: 72,
+  },
+  bottomNav: {
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 64,
+    background: 'rgba(255,255,255,0.98)',
+    borderTop: '1px solid #dbe7fb',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 8,
+    padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
+    zIndex: 40,
+    boxShadow: '0 -12px 30px rgba(31, 64, 122, 0.08)',
+  },
+  bottomNavItem: {
+    border: '1px solid #dbe7fb',
+    borderRadius: 14,
+    background: '#f7fbff',
+    color: '#456',
+    fontSize: 13,
+    fontWeight: 700,
+  },
+  bottomNavItemActive: {
+    background: '#4a90d9',
+    borderColor: '#4a90d9',
+    color: '#fff',
   },
 };

@@ -11,8 +11,9 @@ function safeLabel(text: string | undefined, fallback: string) {
 
 export default function MessageList() {
   const { messages, currentSession } = useChatStore();
-  const { user } = useAuthStore();
+  const { user, userInfo } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -28,19 +29,36 @@ export default function MessageList() {
   };
 
   const headerTitle = safeLabel(currentSession.sessionName, currentSession.sessionType === 2 ? `群聊 ${currentSession.sessionId}` : `会话 ${currentSession.sessionId}`);
+  const peerName = safeLabel(currentSession.sessionName, '对方');
+  const currentUserId = user?.userId || user?.user_id || userInfo?.user_id;
+  const currentNickname = safeLabel(userInfo?.nickname || user?.nickname, '我');
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>{headerTitle}</div>
-      <div style={styles.list}>
+      <div style={styles.header}>
+        <div>
+          <div style={styles.headerTitle}>{headerTitle}</div>
+          <div style={styles.headerSub}>消息窗口固定高度，向上滚动查看历史消息</div>
+        </div>
+      </div>
+      <div ref={listRef} style={styles.list}>
         {messages.map((msg: MessageVo) => {
-          const isMe = msg.senderId === user?.userId || msg.senderId === user?.user_id;
+          const isMe = msg.mine || msg.senderId === currentUserId;
+          const senderName = isMe ? currentNickname : peerName;
+          const bubbleStyle = isMe ? styles.bubbleMe : styles.bubbleOther;
+          const rowStyle = isMe ? styles.msgRowMe : styles.msgRowOther;
           return (
-            <div key={msg.msgId || msg.localId} style={{ ...styles.msgRow, ...(isMe ? styles.msgRowMe : {}) }}>
-              <div style={styles.bubble}>
-                <div style={styles.sender}>{isMe ? '我' : `用户 ${msg.senderId}`}</div>
-                <div style={styles.content}>{msg.content || msg.fileName || '[非文本消息]'}</div>
-                <div style={styles.time}>{formatTime(msg.createdAt)}</div>
+            <div key={msg.msgId || msg.localId} style={{ ...styles.msgRow, ...rowStyle }}>
+              <div style={{ ...styles.avatar, ...(isMe ? styles.avatarMe : styles.avatarOther) }}>
+                {(senderName || '?').charAt(0)}
+              </div>
+              <div style={{ ...styles.bubble, ...bubbleStyle }}>
+                <div style={styles.sender}>{senderName}</div>
+                <div style={{ ...styles.content, ...(isMe ? styles.contentMe : {}) }}>{msg.content || msg.fileName || '[非文本消息]'}</div>
+                <div style={styles.metaRow}>
+                  {msg.status && isMe && <span style={styles.status}>{msg.status === 'sending' ? '发送中' : msg.status === 'failed' ? '发送失败' : '已发送'}</span>}
+                  <div style={styles.time}>{formatTime(msg.createdAt)}</div>
+                </div>
               </div>
             </div>
           );
@@ -52,21 +70,39 @@ export default function MessageList() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: { flex: 1, display: 'flex', flexDirection: 'column' },
+  container: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#f3f7ff' },
   header: {
-    padding: '12px 16px',
-    fontWeight: 600,
-    fontSize: 14,
-    borderBottom: '1px solid #e8e8e8',
-    background: '#fff',
-    color: '#333',
+    padding: '14px 18px',
+    borderBottom: '1px solid #dbe7fb',
+    background: 'rgba(255,255,255,0.92)',
+    color: '#1f2d3d',
   },
-  list: { flex: 1, overflow: 'auto', padding: 16, background: '#fafafa' },
+  headerTitle: { fontWeight: 700, fontSize: 15 },
+  headerSub: { marginTop: 4, fontSize: 12, color: '#7a869a' },
+  list: { flex: 1, overflowY: 'auto', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 },
   empty: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 16 },
-  msgRow: { display: 'flex', marginBottom: 12 },
+  msgRow: { display: 'flex', gap: 10, alignItems: 'flex-end' },
   msgRowMe: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '70%', padding: '8px 12px', borderRadius: 8, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' },
-  sender: { fontSize: 11, color: '#4a90d9', marginBottom: 2 },
+  msgRowOther: { justifyContent: 'flex-start' },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    display: 'grid',
+    placeItems: 'center',
+    fontSize: 12,
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+  avatarMe: { background: '#1f6feb', color: '#fff', order: 2 },
+  avatarOther: { background: '#e6eefc', color: '#36527a' },
+  bubble: { maxWidth: '62%', padding: '10px 12px', borderRadius: 18, boxShadow: '0 10px 20px rgba(31, 45, 61, 0.06)' },
+  bubbleMe: { background: '#1f6feb', color: '#fff', borderBottomRightRadius: 6, order: 1 },
+  bubbleOther: { background: '#fff', color: '#1f2d3d', border: '1px solid #dbe7fb', borderBottomLeftRadius: 6 },
+  sender: { fontSize: 11, marginBottom: 4, opacity: 0.78 },
   content: { fontSize: 14, color: '#333', lineHeight: 1.5, wordBreak: 'break-word' },
-  time: { fontSize: 10, color: '#bbb', textAlign: 'right', marginTop: 4 },
+  contentMe: { color: '#fff' },
+  metaRow: { marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  status: { fontSize: 11, opacity: 0.82 },
+  time: { fontSize: 10, opacity: 0.72, textAlign: 'right' },
 };

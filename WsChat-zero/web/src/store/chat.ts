@@ -17,6 +17,7 @@ interface ChatState {
   setCurrentSession: (session: SessionVo | null) => void;
   addMessage: (msg: MessageVo) => void;
   markMessageStatus: (localId: string, status: NonNullable<MessageVo['status']>) => void;
+  setWsStatus: (state: ChatState['wsState'], hint?: string) => void;
   createSession: (peerId: number, sessionType: number, sessionName?: string) => Promise<boolean>;
 }
 
@@ -79,6 +80,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({
       messages: state.messages.map((item) => (item.localId === localId ? { ...item, status } : item)),
     }));
+  },
+
+  setWsStatus: (wsState, hint) => {
+    const defaultHintMap: Record<ChatState['wsState'], string> = {
+      idle: '未连接',
+      connecting: '正在连接',
+      connected: '连接正常',
+      reconnecting: '正在重连',
+      disconnected: '连接已断开',
+      error: '连接异常',
+    };
+
+    set({
+      wsState,
+      wsHint: hint || defaultHintMap[wsState],
+    });
   },
 
   createSession: async (peerId, sessionType, sessionName) => {

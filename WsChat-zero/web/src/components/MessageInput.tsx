@@ -78,7 +78,7 @@ export default function MessageInput() {
             if (file) void handleUpload(file);
           }}
         />
-        <div style={styles.hint}>{busy ? '正在上传' : wsState === 'connected' ? '连接正常' : '等待连接'}</div>
+        <div style={styles.hint}>{busy ? '正在上传' : wsState === 'connected' ? '连接正常，可直接发送' : wsState === 'reconnecting' ? '连接波动，正在重连' : '等待连接建立'}</div>
       </div>
 
       <div style={styles.editor}>
@@ -101,8 +101,8 @@ export default function MessageInput() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: 14,
-    borderTop: '1px solid #e8e8e8',
-    background: '#fff',
+    borderTop: '1px solid #dbe7fb',
+    background: 'rgba(255,255,255,0.96)',
     display: 'grid',
     gap: 10,
   },
@@ -110,7 +110,7 @@ const styles: Record<string, React.CSSProperties> = {
   toolBtn: {
     height: 34,
     padding: '0 12px',
-    borderRadius: 12,
+    borderRadius: 10,
     border: '1px solid #dbe7fb',
     background: '#f7fbff',
     color: '#4a90d9',
@@ -120,19 +120,20 @@ const styles: Record<string, React.CSSProperties> = {
   input: {
     flex: 1,
     resize: 'none',
-    minHeight: 96,
-    padding: '14px 16px',
-    borderRadius: 18,
+    minHeight: 84,
+    maxHeight: 140,
+    padding: '12px 14px',
+    borderRadius: 16,
     border: '1px solid #dbe7fb',
     background: '#f8fbff',
     color: '#333',
     lineHeight: 1.6,
   },
   sendBtn: {
-    minWidth: 96,
-    height: 48,
+    minWidth: 88,
+    height: 44,
     padding: '0 18px',
-    borderRadius: 16,
+    borderRadius: 14,
     border: 'none',
     color: '#fff',
     fontWeight: 700,

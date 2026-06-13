@@ -24,6 +24,7 @@ export default function Contacts() {
   const [searchResults, setSearchResults] = useState<UserInfoResp[]>([]);
   const [tab, setTab] = useState<TabKey>('list');
   const [applyOpen, setApplyOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
 
   useEffect(() => {
     void refresh();
@@ -69,6 +70,7 @@ export default function Contacts() {
     if (resp.code === 0) {
       setSearchResults(resp.data || []);
       setTab('search');
+      setQuickOpen(false);
     } else {
       alert(resp.message);
     }
@@ -82,18 +84,47 @@ export default function Contacts() {
         <button type="button" style={{ ...styles.tab, ...(tab === 'list' ? styles.tabActive : {}) }} onClick={() => setTab('list')}>
           联系人
         </button>
-        <button
-          type="button"
-          style={{ ...styles.plusBtn, ...(applyOpen ? styles.plusBtnActive : {}) }}
-          onClick={() => setApplyOpen((v) => !v)}
-          title="新朋友"
-        >
-          +
-          {applyCount > 0 && <span style={styles.badge}>{applyCount}</span>}
-        </button>
-        <button type="button" style={{ ...styles.tab, ...(tab === 'search' ? styles.tabActive : {}) }} onClick={() => setTab('search')}>
-          查找用户
-        </button>
+        <div style={styles.plusWrap}>
+          <button
+            type="button"
+            style={{ ...styles.plusBtn, ...(applyOpen || quickOpen ? styles.plusBtnActive : {}) }}
+            onClick={() => {
+              setQuickOpen((v) => !v);
+              setApplyOpen(false);
+            }}
+            title="更多操作"
+          >
+            +
+            {applyCount > 0 && <span style={styles.badge}>{applyCount}</span>}
+          </button>
+          {quickOpen && (
+            <div style={styles.quickPanel}>
+              <button
+                type="button"
+                style={styles.quickItem}
+                onClick={() => {
+                  setApplyOpen(true);
+                  setTab('list');
+                  setQuickOpen(false);
+                }}
+              >
+                <span>新朋友</span>
+                {applyCount > 0 && <span style={styles.quickBadge}>{applyCount}</span>}
+              </button>
+              <button
+                type="button"
+                style={styles.quickItem}
+                onClick={() => {
+                  setTab('search');
+                  setApplyOpen(false);
+                  setQuickOpen(false);
+                }}
+              >
+                <span>查找用户</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {applyOpen && (
@@ -217,7 +248,7 @@ export default function Contacts() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { flex: 1, display: 'flex', flexDirection: 'column', background: '#fff' },
-  tabs: { display: 'grid', gridTemplateColumns: '1fr 56px 1fr', alignItems: 'stretch', borderBottom: '1px solid #e8e8e8' },
+  tabs: { display: 'grid', gridTemplateColumns: '1fr 64px', alignItems: 'stretch', borderBottom: '1px solid #e8e8e8' },
   tab: {
     padding: '12px 0',
     border: 'none',
@@ -228,8 +259,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '2px solid transparent',
   },
   tabActive: { background: '#fff', color: '#4a90d9', fontWeight: 600, borderBottomColor: '#4a90d9' },
+  plusWrap: { position: 'relative' },
   plusBtn: {
     position: 'relative',
+    width: '100%',
+    height: '100%',
     border: 'none',
     background: '#fff',
     cursor: 'pointer',
@@ -239,6 +273,44 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '2px solid transparent',
   },
   plusBtnActive: { background: '#eaf3ff', borderBottomColor: '#4a90d9' },
+  quickPanel: {
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    right: 8,
+    minWidth: 150,
+    padding: 8,
+    borderRadius: 12,
+    background: '#fff',
+    border: '1px solid #dbe7fb',
+    boxShadow: '0 16px 32px rgba(31, 64, 122, 0.14)',
+    zIndex: 20,
+  },
+  quickItem: {
+    width: '100%',
+    minHeight: 40,
+    padding: '0 12px',
+    border: 'none',
+    borderRadius: 8,
+    background: '#fff',
+    color: '#1f2d3d',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    fontSize: 13,
+    textAlign: 'left',
+  },
+  quickBadge: {
+    minWidth: 18,
+    height: 18,
+    padding: '0 5px',
+    borderRadius: 9,
+    background: '#f5222d',
+    color: '#fff',
+    fontSize: 11,
+    display: 'grid',
+    placeItems: 'center',
+  },
   badge: {
     position: 'absolute',
     top: 8,
