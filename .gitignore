@@ -9,3 +9,13 @@ WsChat-zero/web/node_modules
 *.png
 *.log
 .tmp
+
+# 编译后的二进制文件
+WsChat-zero/bin/
+WsChat-zero/release/build/bin/
+WsChat-zero/app/*/msg-forward
+WsChat-zero/app/*/*.exe
+
+# 归档文件
+*.tar
+*.tar.gz
