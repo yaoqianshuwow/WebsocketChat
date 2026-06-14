@@ -8,8 +8,8 @@ Log:
 
 Kafka:
   Brokers:
-    - localhost:9092
-  ChatTopic: chat_message
+    - localhost:19092
+  ChatTopic: chat-messages
   LoginTopic: login
   LogoutTopic: logout
   GroupId: msg-store-group

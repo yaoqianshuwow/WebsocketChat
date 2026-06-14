@@ -2,14 +2,14 @@ package logic
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/your-org/ws-chat-zero/app/msg-forward/internal/model"
+	"github.com/segmentio/kafka-go"
 	"github.com/your-org/ws-chat-zero/app/msg-forward/internal/svc"
 	"github.com/your-org/ws-chat-zero/app/msg-forward/pb/pb"
 	"github.com/zeromicro/go-zero/core/logx"
-	"gorm.io/gorm"
 )
 
 type SendMessageLogic struct {
@@ -18,10 +18,20 @@ type SendMessageLogic struct {
 	logx.Logger
 }
 
-type sessionLite struct {
-	Id          int64 `gorm:"column:id"`
-	UserId      int64 `gorm:"column:user_id"`
-	UnreadCount int32 `gorm:"column:unread_count"`
+type messagePayload struct {
+	MsgId        int64  `json:"msg_id"`
+	SenderId     int64  `json:"sender_id"`
+	ReceiverId   int64  `json:"receiver_id"`
+	ChatType     int32  `json:"chat_type"`
+	MsgType      int32  `json:"msg_type"`
+	Content      string `json:"content"`
+	FileUrl      string `json:"file_url"`
+	FileSize     int64  `json:"file_size"`
+	FileName     string `json:"file_name"`
+	SessionId    int64  `json:"session_id"`
+	CreatedAt    int64  `json:"created_at"`
+	SenderName   string `json:"sender_name"`
+	SenderAvatar string `json:"sender_avatar"`
 }
 
 func NewSendMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *SendMessageLogic {
@@ -30,61 +40,38 @@ func NewSendMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *SendM
 
 func (l *SendMessageLogic) SendMessage(in *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
 	now := time.Now()
-	msg := model.Message{
-		Uuid:       fmt.Sprintf("M%019d", now.UnixNano()),
-		Type:       in.MsgType,
-		Content:    in.Content,
-		Url:        in.FileUrl,
-		SendID:     formatID(in.SenderId),
-		SendName:   formatID(in.SenderId),
-		SendAvatar: "",
-		ReceiveID:  formatID(in.ReceiverId),
-		FileType:   "",
-		FileName:   in.FileName,
-		FileSize:   in.FileSize,
-		Status:     0,
-		CreatedAt:  now,
-		SenderId:   in.SenderId,
-		ReceiverId: in.ReceiverId,
-		ChatType:   in.ChatType,
-		MsgType:    in.MsgType,
-		FileUrl:    in.FileUrl,
-		SessionId:  in.SessionId,
+	msgID := now.UnixNano()
+	payload := messagePayload{
+		MsgId:        msgID,
+		SenderId:     in.SenderId,
+		ReceiverId:   in.ReceiverId,
+		ChatType:     in.ChatType,
+		MsgType:      in.MsgType,
+		Content:      in.Content,
+		FileUrl:      in.FileUrl,
+		FileSize:     in.FileSize,
+		FileName:     in.FileName,
+		SessionId:    in.SessionId,
+		CreatedAt:    now.Unix(),
+		SenderName:   in.SenderName,
+		SenderAvatar: in.SenderAvatar,
 	}
 
-	if err := l.svcCtx.DB.Create(&msg).Error; err != nil {
-		logx.Errorf("message insert error: %v", err)
+	body, err := json.Marshal(payload)
+	if err != nil {
+		logx.Errorf("marshal message payload error: %v", err)
+		return &pb.SendMessageResponse{Code: -1, Message: "消息打包失败"}, nil
+	}
+
+	if err := l.svcCtx.KafkaWriter.WriteMessages(l.ctx, kafka.Message{
+		Key:   []byte(fmt.Sprintf("%d", in.SessionId)),
+		Value: body,
+		Time:  now,
+	}); err != nil {
+		logx.Errorf("kafka write error: sender=%d receiver=%d session=%d err=%v", in.SenderId, in.ReceiverId, in.SessionId, err)
 		return &pb.SendMessageResponse{Code: -1, Message: "消息发送失败"}, nil
 	}
 
-	if err := l.updateSessionPreview(in.SessionId, in.SenderId, now.Unix(), in.Content); err != nil {
-		logx.Errorf("update session preview error: session=%d err=%v", in.SessionId, err)
-	}
-
-	logx.Infof("message stored directly: sender=%d receiver=%d session=%d id=%d", in.SenderId, in.ReceiverId, in.SessionId, msg.Id)
-	return &pb.SendMessageResponse{Code: 0, Message: "ok", MsgId: msg.Id}, nil
-}
-
-func (l *SendMessageLogic) updateSessionPreview(sessionId, senderId, sentAt int64, content string) error {
-	var session sessionLite
-	if err := l.svcCtx.DB.Table("session").Where("id = ?", sessionId).First(&session).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		}
-		return err
-	}
-
-	update := map[string]interface{}{
-		"last_msg_content": content,
-		"last_msg_time":    sentAt,
-	}
-	if session.UserId != senderId {
-		update["unread_count"] = session.UnreadCount + 1
-	}
-
-	return l.svcCtx.DB.Table("session").Where("id = ?", sessionId).Updates(update).Error
-}
-
-func formatID(v int64) string {
-	return fmt.Sprintf("%d", v)
+	logx.Infof("message enqueued: sender=%d receiver=%d session=%d msg_id=%d", in.SenderId, in.ReceiverId, in.SessionId, msgID)
+	return &pb.SendMessageResponse{Code: 0, Message: "ok", MsgId: msgID}, nil
 }

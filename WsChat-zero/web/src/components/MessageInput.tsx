@@ -56,7 +56,41 @@ export default function MessageInput() {
     if (!file) return;
     setBusy(true);
     try {
-      await api.uploadFile(file);
+      const resp = await api.uploadFile(file);
+      if (resp.code !== 0 || !resp.fileUrl) {
+        alert(resp.message);
+        return;
+      }
+
+      const localId = `local-${Date.now()}`;
+      const localMessage: MessageVo = {
+        localId,
+        senderId: userId,
+        receiverId: currentSession.peerId,
+        msgType: 2,
+        content: '',
+        fileUrl: resp.fileUrl,
+        fileName: resp.fileName || file.name,
+        fileSize: resp.fileSize || file.size,
+        createdAt: Math.floor(Date.now() / 1000),
+        status: 'sending',
+        mine: true,
+      };
+      addMessage(localMessage);
+
+      const sent = wsClient.sendMessage(
+        '',
+        currentSession.peerId,
+        currentSession.sessionType,
+        currentSession.sessionId,
+        2,
+        {
+          fileUrl: resp.fileUrl,
+          fileName: resp.fileName || file.name,
+          fileSize: resp.fileSize || file.size,
+        },
+      );
+      markMessageStatus(localId, sent ? 'sent' : 'failed');
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = '';

@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 go build -o /gateway ./app/gateway/
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /gateway /app/gateway
-COPY app/gateway/etc/ /app/etc/
+COPY deploy/docker-config/gateway-api.yaml /app/etc/gateway-api.yaml
 WORKDIR /app
 EXPOSE 8888
 CMD ["/app/gateway", "-f", "/app/etc/gateway-api.yaml"]

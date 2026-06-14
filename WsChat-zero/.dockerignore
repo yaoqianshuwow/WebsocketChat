@@ -1,0 +1,15 @@
+.git
+.agents
+.codex
+.playwright-mcp
+.tmp
+bin
+bin-linux
+web/node_modules
+web/dist
+storage
+task
+*.log
+*.err.log
+*.out.log
+*.png

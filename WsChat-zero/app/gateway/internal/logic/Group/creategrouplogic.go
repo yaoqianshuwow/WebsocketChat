@@ -16,7 +16,7 @@ func NewCreateGroupLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 
 func (l *CreateGroupLogic) CreateGroup(req *types.CreateGroupReq) (resp *types.GroupInfoResp, err error) {
 	uid := l.ctx.Value("userId").(int64)
-	r, e := l.svcCtx.FriendClient.CreateGroup(l.ctx, &friendpb.CreateGroupRequest{GroupName: req.GroupName, OwnerId: uid, MemberIds: req.MemberIds})
+	r, e := l.svcCtx.FriendClient.CreateGroup(l.ctx, &friendpb.CreateGroupRequest{GroupName: req.GroupName, OwnerId: uid})
 	if e != nil || r.Code != 0 { return &types.GroupInfoResp{Code: r.GetCode(), Message: r.GetMessage()}, nil }
 	g := r.Data
 	return &types.GroupInfoResp{Code: 0, Message: "ok", GroupId: g.Id, Name: g.Name, Avatar: g.Avatar, OwnerId: g.OwnerId, MemberCount: g.MemberCount, AddMode: g.AddMode, Status: g.Status, Notice: g.Notice}, nil

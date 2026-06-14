@@ -27,6 +27,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			websocket.WSHandler(w, r, serverCtx)
 		},
 	})
+	// 文件下载（手动鉴权）
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/api/v1/message/downloadFile",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			Message.DownloadFileHandlerWithAuth(w, r, serverCtx)
+		},
+	})
 	server.AddRoutes(
 		rest.WithMiddlewares(
 			[]rest.Middleware{serverCtx.Auth},
@@ -81,6 +89,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				},
 				{
 					Method:  http.MethodPost,
+					Path:    "/api/v1/group/searchGroupList",
+					Handler: Group.SearchGroupListHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodPost,
 					Path:    "/api/v1/group/deleteGroups",
 					Handler: Group.DeleteGroupsHandler(serverCtx),
 				},
@@ -103,6 +116,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Method:  http.MethodPost,
 					Path:    "/api/v1/group/leaveGroup",
 					Handler: Group.LeaveGroupHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodPost,
+					Path:    "/api/v1/group/joinGroup",
+					Handler: Group.JoinGroupHandler(serverCtx),
 				},
 				{
 					Method:  http.MethodPost,

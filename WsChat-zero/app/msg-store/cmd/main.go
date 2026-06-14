@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
+
 	"github.com/your-org/ws-chat-zero/app/msg-store/internal/config"
 	"github.com/your-org/ws-chat-zero/app/msg-store/internal/consumer"
 	"github.com/your-org/ws-chat-zero/app/msg-store/internal/svc"
@@ -16,11 +18,11 @@ func main() {
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
-	logx.MustSetup(c.Log)
+	logx.MustSetup(c.RestConf.Log)
 
 	ctx := svc.NewServiceContext(c)
 
-	// 启动 Kafka 消费者（消息存储）
+	// 启动 Kafka 消费者，负责消息落库和会话同步
 	go consumer.StartMessageConsumer(ctx)
 
 	logx.Info("msg-store service started")

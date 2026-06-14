@@ -16,17 +16,19 @@ import (
 
 // MessagePayload Kafka 消息体
 type MessagePayload struct {
-	MsgId      int64  `json:"msg_id"`
-	SenderId   int64  `json:"sender_id"`
-	ReceiverId int64  `json:"receiver_id"`
-	ChatType   int32  `json:"chat_type"`
-	MsgType    int32  `json:"msg_type"`
-	Content    string `json:"content"`
-	FileUrl    string `json:"file_url"`
-	FileSize   int64  `json:"file_size"`
-	FileName   string `json:"file_name"`
-	SessionId  int64  `json:"session_id"`
-	CreatedAt  int64  `json:"created_at"`
+	MsgId        int64  `json:"msg_id"`
+	SenderId     int64  `json:"sender_id"`
+	ReceiverId   int64  `json:"receiver_id"`
+	ChatType     int32  `json:"chat_type"`
+	MsgType      int32  `json:"msg_type"`
+	Content      string `json:"content"`
+	FileUrl      string `json:"file_url"`
+	FileSize     int64  `json:"file_size"`
+	FileName     string `json:"file_name"`
+	SessionId    int64  `json:"session_id"`
+	CreatedAt    int64  `json:"created_at"`
+	SenderName   string `json:"sender_name"`
+	SenderAvatar string `json:"sender_avatar"`
 }
 
 func StartMessageConsumer(ctx *svc.ServiceContext) {
@@ -81,6 +83,8 @@ func storeToMySQL(ctx *svc.ServiceContext, payload *MessagePayload) error {
 		FileUrl:    payload.FileUrl,
 		FileSize:   payload.FileSize,
 		FileName:   payload.FileName,
+		SendName:   payload.SenderName,
+		SendAvatar: payload.SenderAvatar,
 		Status:     0,
 		SessionId:  payload.SessionId,
 		CreatedAt:  time.Unix(payload.CreatedAt, 0),

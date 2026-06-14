@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -o /file-rpc ./app/file/
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /file-rpc /app/file-rpc
-COPY app/file/etc/ /app/etc/
+COPY deploy/docker-config/file.yaml /app/etc/file.yaml
 WORKDIR /app
 EXPOSE 9094
 CMD ["/app/file-rpc", "-f", "/app/etc/file.yaml"]

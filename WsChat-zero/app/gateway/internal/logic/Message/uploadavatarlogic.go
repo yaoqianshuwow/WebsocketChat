@@ -18,21 +18,21 @@ func NewUploadAvatarLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Uplo
 	return &UploadAvatarLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
 }
 
-func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.CommonResp, err error) {
+func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.UploadAvatarResp, err error) {
 	// 限制最大 5MB
 	if err := r.ParseMultipartForm(5 << 20); err != nil {
-		return &types.CommonResp{Code: 1, Message: "解析表单失败"}, nil
+		return &types.UploadAvatarResp{Code: 1, Message: "解析表单失败"}, nil
 	}
 
 	file, header, err := r.FormFile("avatar")
 	if err != nil {
-		return &types.CommonResp{Code: 1, Message: "获取头像文件失败"}, nil
+		return &types.UploadAvatarResp{Code: 1, Message: "获取头像文件失败"}, nil
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		return &types.CommonResp{Code: 1, Message: "读取文件失败"}, nil
+		return &types.UploadAvatarResp{Code: 1, Message: "读取文件失败"}, nil
 	}
 
 	userId := l.ctx.Value("userId").(int64)
@@ -51,7 +51,7 @@ func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.CommonRes
 		} else if fileResp.Message != "" {
 			msg = fileResp.Message
 		}
-		return &types.CommonResp{Code: 1, Message: msg}, nil
+		return &types.UploadAvatarResp{Code: 1, Message: msg}, nil
 	}
 
 	// 更新用户头像
@@ -60,8 +60,14 @@ func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.CommonRes
 		Avatar: fileResp.FileUrl,
 	})
 	if err != nil {
-		return &types.CommonResp{Code: 1, Message: "更新头像失败"}, nil
+		return &types.UploadAvatarResp{Code: 1, Message: "更新头像失败"}, nil
 	}
 
-	return &types.CommonResp{Code: 0, Message: "头像上传成功"}, nil
+	return &types.UploadAvatarResp{
+		Code:     0,
+		Message:  "头像上传成功",
+		FileUrl:  fileResp.FileUrl,
+		FileName: header.Filename,
+		FileSize: fileResp.FileSize,
+	}, nil
 }

@@ -93,8 +93,10 @@ type (
 	}
 	// ── 群组 ──
 	CreateGroupReq {
-		GroupName string  `json:"groupName"`
-		MemberIds []int64 `json:"memberIds,optional"`
+		GroupName string `json:"groupName"`
+	}
+	SearchGroupListReq {
+		Keyword string `json:"keyword"`
 	}
 	GroupInfoResp {
 		Code        int32  `json:"code"`
@@ -294,6 +296,9 @@ service gateway-api {
 	@handler CreateGroup
 	post /api/v1/group/createGroup (CreateGroupReq) returns (GroupInfoResp)
 
+	@handler SearchGroupList
+	post /api/v1/group/searchGroupList (SearchGroupListReq) returns (GroupListResp)
+
 	@handler GetGroupInfo
 	post /api/v1/group/getGroupInfo (GroupIdReq) returns (GroupInfoResp)
 
@@ -381,4 +386,3 @@ service gateway-api {
 	@handler UploadAvatar
 	post /api/v1/message/uploadAvatar returns (CommonResp)
 }
-

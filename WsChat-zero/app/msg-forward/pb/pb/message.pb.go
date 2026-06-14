@@ -35,6 +35,8 @@ type Message struct {
 	Status        int32                  `protobuf:"varint,10,opt,name=status,proto3" json:"status,omitempty"`
 	SessionId     int64                  `protobuf:"varint,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	SenderName    string                 `protobuf:"bytes,13,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	SenderAvatar  string                 `protobuf:"bytes,14,opt,name=sender_avatar,json=senderAvatar,proto3" json:"sender_avatar,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,6 +155,20 @@ func (x *Message) GetCreatedAt() int64 {
 	return 0
 }
 
+func (x *Message) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *Message) GetSenderAvatar() string {
+	if x != nil {
+		return x.SenderAvatar
+	}
+	return ""
+}
+
 type SendMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SenderId      int64                  `protobuf:"varint,1,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
@@ -164,6 +180,8 @@ type SendMessageRequest struct {
 	FileSize      int64                  `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
 	FileName      string                 `protobuf:"bytes,8,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
 	SessionId     int64                  `protobuf:"varint,9,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SenderName    string                 `protobuf:"bytes,10,opt,name=sender_name,json=senderName,proto3" json:"sender_name,omitempty"`
+	SenderAvatar  string                 `protobuf:"bytes,11,opt,name=sender_avatar,json=senderAvatar,proto3" json:"sender_avatar,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,6 +277,20 @@ func (x *SendMessageRequest) GetSessionId() int64 {
 		return x.SessionId
 	}
 	return 0
+}
+
+func (x *SendMessageRequest) GetSenderName() string {
+	if x != nil {
+		return x.SenderName
+	}
+	return ""
+}
+
+func (x *SendMessageRequest) GetSenderAvatar() string {
+	if x != nil {
+		return x.SenderAvatar
+	}
+	return ""
 }
 
 type GetMessageListRequest struct {
@@ -673,7 +705,7 @@ var File_message_proto protoreflect.FileDescriptor
 
 const file_message_proto_rawDesc = "" +
 	"\n" +
-	"\rmessage.proto\x12\x03msg\"\xd4\x02\n" +
+	"\rmessage.proto\x12\x03msg\"\x9a\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\x03R\bsenderId\x12\x1f\n" +
@@ -690,7 +722,10 @@ const file_message_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\v \x01(\x03R\tsessionId\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\f \x01(\x03R\tcreatedAt\"\x98\x02\n" +
+	"created_at\x18\f \x01(\x03R\tcreatedAt\x12\x1f\n" +
+	"\vsender_name\x18\r \x01(\tR\n" +
+	"senderName\x12#\n" +
+	"\rsender_avatar\x18\x0e \x01(\tR\fsenderAvatar\"\xde\x02\n" +
 	"\x12SendMessageRequest\x12\x1b\n" +
 	"\tsender_id\x18\x01 \x01(\x03R\bsenderId\x12\x1f\n" +
 	"\vreceiver_id\x18\x02 \x01(\x03R\n" +
@@ -702,7 +737,11 @@ const file_message_proto_rawDesc = "" +
 	"\tfile_size\x18\a \x01(\x03R\bfileSize\x12\x1b\n" +
 	"\tfile_name\x18\b \x01(\tR\bfileName\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\t \x01(\x03R\tsessionId\"{\n" +
+	"session_id\x18\t \x01(\x03R\tsessionId\x12\x1f\n" +
+	"\vsender_name\x18\n" +
+	" \x01(\tR\n" +
+	"senderName\x12#\n" +
+	"\rsender_avatar\x18\v \x01(\tR\fsenderAvatar\"{\n" +
 	"\x15GetMessageListRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\x03R\tsessionId\x12\x12\n" +

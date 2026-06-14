@@ -1,4 +1,6 @@
-const API_BASE = '/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api/v1`
+  : '/api/v1';
 
 class ApiClient {
   private token: string | null = null;
@@ -107,8 +109,16 @@ class ApiClient {
     return this.request<import('../types').CommonResp>('/contact/deleteContact', { contactId });
   }
 
+  blackContact(contactId: number) {
+    return this.request<import('../types').CommonResp>('/contact/blackContact', { contactId });
+  }
+
   getApplyList() {
     return this.request<import('../types').ApplyListResp>('/contact/getNewContactList', {});
+  }
+
+  getContactInfo2(contactId: number) {
+    return this.request<import('../types').ContactListResp>('/contact/getContactInfo', { contactId });
   }
 
   // ── 会话 ──
@@ -154,12 +164,43 @@ class ApiClient {
     return this.request<import('../types').CommonResp>('/group/updateGroupInfo', data);
   }
 
+  searchGroupList(keyword: string) {
+    return this.request<import('../types').SearchGroupListResp>('/group/searchGroupList', { keyword });
+  }
+
+  setGroupsStatus(groupId: number) {
+    return this.request<import('../types').CommonResp>('/group/setGroupsStatus', { groupId });
+  }
+
+  dismissGroup(groupId: number) {
+    return this.request<import('../types').CommonResp>('/group/dismissGroup', { groupId });
+  }
+
+  deleteGroups(ids: number[]) {
+    return this.request<import('../types').CommonResp>('/group/deleteGroups', { ids });
+  }
+
   uploadFile(file: File) {
-    return this.upload<import('../types').CommonResp>('/message/uploadFile', file);
+    return this.upload<import('../types').UploadFileResp>('/message/uploadFile', file);
   }
 
   uploadAvatar(file: File) {
-    return this.upload<import('../types').CommonResp>('/message/uploadAvatar', file);
+    return this.upload<import('../types').UploadAvatarResp>('/message/uploadAvatar', file);
+  }
+
+  downloadFile(fileUrl: string) {
+    const token = this.getToken();
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const a = document.createElement('a');
+    a.href = `${baseUrl}/api/v1/message/downloadFile?fileUrl=${encodeURIComponent(fileUrl)}`;
+    if (token) a.href += `&token=${encodeURIComponent(token)}`;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
+  }
+
+  joinGroup(groupId: number) {
+    return this.request<import('../types').CommonResp>('/group/joinGroup', { groupId });
   }
 
   leaveGroup(groupId: number) {

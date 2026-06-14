@@ -4,6 +4,14 @@ export interface CommonResp {
   message: string;
 }
 
+export interface UploadFileResp {
+  code: number;
+  message: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+}
+
 // ── 用户 ──
 export interface LoginReq {
   username: string;
@@ -71,6 +79,14 @@ export interface UpdateUserInfoReq {
   bio?: string;
 }
 
+export interface UploadAvatarResp {
+  code: number;
+  message: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+}
+
 // ── 消息 ──
 export interface MessageVo {
   msgId?: number;
@@ -85,6 +101,8 @@ export interface MessageVo {
   createdAt: number;
   status?: 'sending' | 'sent' | 'failed';
   mine?: boolean;
+  sendName?: string;
+  sendAvatar?: string;
 }
 
 export interface MessageListResp {
@@ -182,4 +200,10 @@ export interface GroupMemberListResp {
   code: number;
   message: string;
   memberList: MemberVo[];
+}
+
+export interface SearchGroupListResp {
+  code: number;
+  message: string;
+  data: GroupInfoResp[];
 }

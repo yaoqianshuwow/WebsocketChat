@@ -44,7 +44,7 @@ func (l *CreateGroupLogic) CreateGroup(in *pb.CreateGroupRequest) (*pb.GroupInfo
 		return &pb.GroupInfoResponse{Code: 1, Message: "创建群组失败"}, nil
 	}
 
-	// 添加群主为管理员
+	// 创建者即群主，只写入群主成员记录
 	ownerMember := model.GroupMember{
 		GroupId:  group.Id,
 		UserId:   in.OwnerId,
@@ -57,23 +57,8 @@ func (l *CreateGroupLogic) CreateGroup(in *pb.CreateGroupRequest) (*pb.GroupInfo
 		return &pb.GroupInfoResponse{Code: 1, Message: "添加群主失败"}, nil
 	}
 
-	// 添加其他成员
-	for _, memberId := range in.MemberIds {
-		member := model.GroupMember{
-			GroupId:  group.Id,
-			UserId:   memberId,
-			Role:     0, // 普通成员
-			Nickname: "",
-			JoinedAt: now,
-		}
-		if err := tx.Create(&member).Error; err != nil {
-			tx.Rollback()
-			return &pb.GroupInfoResponse{Code: 1, Message: "添加成员失败"}, nil
-		}
-	}
-
-	// 更新成员数
-	group.MemberCount = int32(1 + len(in.MemberIds))
+	// 初始成员只有群主
+	group.MemberCount = 1
 	tx.Model(&group).Update("member_count", group.MemberCount)
 
 	tx.Commit()

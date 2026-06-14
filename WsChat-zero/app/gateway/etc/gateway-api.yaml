@@ -4,16 +4,30 @@ Port: 8888
 Timeout: 30000
 
 UserRpc:
-  Target: localhost:9091
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: user.rpc
 MsgRpc:
-  Target: localhost:9092
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: msg.rpc
 FriendRpc:
-  Target: localhost:9093
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: friend.rpc
 FileRpc:
-  Target: localhost:9094
+  Etcd:
+    Hosts:
+      - localhost:2379
+    Key: file.rpc
 Redis:
   Host: localhost:6379
   Pass: ""
 
 JwtAuth:
   AccessSecret: ws-chat-zero-secret-key-2026
+Mysql:
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local

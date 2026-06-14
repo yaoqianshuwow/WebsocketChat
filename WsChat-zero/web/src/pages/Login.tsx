@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth';
-import wsClient from '@/ws/client';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -21,8 +20,6 @@ export default function Login() {
 
     const ok = await login(username, password);
     if (ok) {
-      const token = localStorage.getItem('token');
-      if (token) wsClient.connect(token);
       navigate('/chat');
     } else {
       setError('登录失败，请检查用户名和密码');

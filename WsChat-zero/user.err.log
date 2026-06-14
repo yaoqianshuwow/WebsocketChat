@@ -1,4 +1,5 @@
-{"@timestamp":"2026-06-13T16:35:17.382+08:00","caller":"zrpc/server.go:90","content":"listen tcp 0.0.0.0:9091: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.","level":"error"}
+exit status 0xffffffff
+13T16:35:17.382+08:00","caller":"zrpc/server.go:90","content":"listen tcp 0.0.0.0:9091: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.","level":"error"}
 panic: listen tcp 0.0.0.0:9091: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
 
 goroutine 1 [running]:

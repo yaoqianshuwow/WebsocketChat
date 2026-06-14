@@ -1,0 +1,31 @@
+Name: gateway-api
+Host: 0.0.0.0
+Port: 8888
+Timeout: 30000
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: user.rpc
+MsgRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: msg.rpc
+FriendRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: friend.rpc
+FileRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: file.rpc
+Redis:
+  Host: redis:6379
+  Pass: ""
+
+JwtAuth:
+  AccessSecret: ws-chat-zero-secret-key-2026

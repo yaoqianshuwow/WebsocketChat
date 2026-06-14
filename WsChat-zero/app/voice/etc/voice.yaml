@@ -2,6 +2,11 @@ Name: voice.rpc
 ListenOn: 0.0.0.0:9095
 Timeout: 60000
 
+Etcd:
+  Hosts:
+    - localhost:2379
+  Key: voice.rpc
+
 BaiduAsr:
   AppId: ""
   ApiKey: ""

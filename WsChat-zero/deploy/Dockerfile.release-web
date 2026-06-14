@@ -1,0 +1,12 @@
+FROM alpine:3.20
+
+WORKDIR /app
+
+COPY bin/web-server /app/web-server
+COPY web-dist /app/web-dist
+
+RUN chmod +x /app/web-server
+
+EXPOSE 80
+
+ENTRYPOINT ["/app/web-server", "-addr", ":80", "-dir", "/app/web-dist"]

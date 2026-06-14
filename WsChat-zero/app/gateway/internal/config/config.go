@@ -1,6 +1,9 @@
 package config
 
-import "github.com/zeromicro/go-zero/rest"
+import (
+	"github.com/zeromicro/go-zero/core/discov"
+	"github.com/zeromicro/go-zero/rest"
+)
 
 type Config struct {
 	rest.RestConf
@@ -10,10 +13,16 @@ type Config struct {
 	FileRpc   RpcConf
 	Redis     RedisConf
 	JwtAuth   JwtAuthConf
+	Mysql     MysqlConf
+}
+
+type MysqlConf struct {
+	DataSource string
 }
 
 type RpcConf struct {
-	Target string // 直连地址: localhost:9091
+	Target string          `json:",optional"`
+	Etcd   discov.EtcdConf `json:",optional,inherit"`
 }
 
 type RedisConf struct {

@@ -1,13 +1,11 @@
 package config
 
 import (
-	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 )
 
 type Config struct {
 	rest.RestConf
-	Log logx.LogConf
 
 	Kafka KafkaConfig
 	Mysql MysqlConfig
@@ -15,18 +13,18 @@ type Config struct {
 }
 
 type KafkaConfig struct {
-	Brokers    []string
-	ChatTopic  string
-	LoginTopic string
-	LogoutTopic string
-	GroupId    string
+	Brokers     []string `json:"Brokers"`
+	ChatTopic   string   `json:"ChatTopic"`
+	LoginTopic  string   `json:"LoginTopic"`
+	LogoutTopic string   `json:"LogoutTopic"`
+	GroupId     string   `json:"GroupId"`
 }
 
 type MysqlConfig struct {
-	DataSource string
+	DataSource string `json:"DataSource"`
 }
 
 type ElasticsearchConfig struct {
-	Addresses []string
-	Index     string
+	Addresses []string `json:"Addresses"`
+	Index     string   `json:"Index"`
 }

@@ -44,7 +44,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadMessages: async (sessionId) => {
     set({ loading: true });
     try {
-      const resp = await api.getMessageList(sessionId);
+      const currentSession = get().currentSession;
+      const resp =
+        currentSession?.sessionType === 2
+          ? await api.getGroupMessageList(currentSession.peerId, 1, 20)
+          : await api.getMessageList(sessionId);
       if (resp.code === 0) {
         set({ messages: resp.data || [] });
       }
@@ -114,17 +118,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const resp: SessionResp = await api.createSession(peerId, sessionType, sessionName || '');
       if (resp.code === 0) {
         await get().loadSessions();
-        const created = get().sessions.find((item) => item.peerId === peerId && item.sessionType === sessionType) || (resp.sessionId
-          ? {
-              sessionId: resp.sessionId,
-              peerId: resp.peerId || peerId,
-              sessionType: resp.sessionType || sessionType,
-              sessionName: resp.sessionName || sessionName || '',
-              lastMsgContent: '',
-              lastMsgTime: Math.floor(Date.now() / 1000),
-              unreadCount: 0,
-            }
-          : null);
+        const created =
+          get().sessions.find((item) => item.peerId === peerId && item.sessionType === sessionType) ||
+          (resp.sessionId
+            ? {
+                sessionId: resp.sessionId,
+                peerId: resp.peerId || peerId,
+                sessionType: resp.sessionType || sessionType,
+                sessionName: resp.sessionName || sessionName || '',
+                lastMsgContent: '',
+                lastMsgTime: Math.floor(Date.now() / 1000),
+                unreadCount: 0,
+              }
+            : null);
         if (created) {
           set({ currentSession: created, messages: [] });
           await get().loadMessages(created.sessionId);

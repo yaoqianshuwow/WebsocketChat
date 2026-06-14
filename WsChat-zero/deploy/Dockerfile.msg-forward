@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -o /msg-forward ./app/msg-forward/
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /msg-forward /app/msg-forward
-COPY app/msg-forward/etc/ /app/etc/
+COPY deploy/docker-config/msg.yaml /app/etc/msg.yaml
 WORKDIR /app
 EXPOSE 9092
 CMD ["/app/msg-forward", "-f", "/app/etc/msg.yaml"]

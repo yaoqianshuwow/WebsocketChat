@@ -2,9 +2,14 @@ Name: msg.rpc
 ListenOn: 0.0.0.0:9092
 Timeout: 30000
 
+Etcd:
+  Hosts:
+    - localhost:2379
+  Key: msg.rpc
+
 Kafka:
   Brokers:
-  - 127.0.0.1:9092
+  - 127.0.0.1:19092
   ChatTopic: chat-messages
 
 Mysql:

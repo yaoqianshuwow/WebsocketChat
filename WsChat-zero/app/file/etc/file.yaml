@@ -2,6 +2,11 @@ Name: file.rpc
 ListenOn: 0.0.0.0:9094
 Timeout: 60000
 
+Etcd:
+  Hosts:
+    - localhost:2379
+  Key: file.rpc
+
 Mysql:
   DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
 

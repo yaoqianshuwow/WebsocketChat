@@ -1,0 +1,15 @@
+Name: file.rpc
+ListenOn: 0.0.0.0:9094
+Timeout: 60000
+
+Etcd:
+  Hosts:
+    - etcd:2379
+  Key: file.rpc
+
+Mysql:
+  DataSource: root:111111@tcp(mysql:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+
+FileConfig:
+  StoragePath: /app/storage/files
+  BaseUrl: http://__SERVER_IP__:9094/files

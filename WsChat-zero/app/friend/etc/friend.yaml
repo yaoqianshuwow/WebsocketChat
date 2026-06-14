@@ -2,5 +2,10 @@ Name: friend.rpc
 ListenOn: 0.0.0.0:9093
 Timeout: 30000
 
+Etcd:
+  Hosts:
+    - localhost:2379
+  Key: friend.rpc
+
 Mysql:
   DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local

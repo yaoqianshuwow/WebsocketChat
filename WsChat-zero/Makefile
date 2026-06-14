@@ -87,9 +87,10 @@ docker-build-all:
 	docker build -t wschat-voice -f deploy/Dockerfile.voice .
 	docker build -t wschat-msg-forward -f deploy/Dockerfile.msg-forward .
 	docker build -t wschat-msg-store -f deploy/Dockerfile.msg-store .
+	docker build -t wschat-web -f deploy/Dockerfile.web .
 
 docker-up:
-	docker compose -f deploy/docker-compose.yml up -d
+	docker compose -f deploy/docker-compose.yml up -d --build
 
 docker-down:
 	docker compose -f deploy/docker-compose.yml down

@@ -8,6 +8,7 @@ const navItems = [
   { path: '/chat', label: '聊天' },
   { path: '/contacts', label: '联系人' },
   { path: '/groups', label: '群组' },
+  { path: '/profile', label: '个人信息' },
 ];
 
 export default function Layout() {
@@ -92,7 +93,11 @@ export default function Layout() {
 
             <div style={styles.userArea} onClick={(e) => e.stopPropagation()}>
               <div style={styles.userChip}>
-                <div style={styles.avatar}>{(userInfo?.nickname || userInfo?.username || 'U').charAt(0)}</div>
+                {userInfo?.avatar ? (
+                  <img src={userInfo.avatar} alt="" style={{ width: 34, height: 34, borderRadius: 999, objectFit: 'cover', background: '#fff', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                ) : (
+                  <div style={styles.avatar}>{(userInfo?.nickname || userInfo?.username || 'U').charAt(0)}</div>
+                )}
                 <div style={styles.userMeta}>
                   <div style={styles.userName}>{userInfo?.nickname || userInfo?.username || '用户'}</div>
                   <div style={styles.userDesc}>在线</div>
@@ -103,6 +108,9 @@ export default function Layout() {
               </button>
               {menuOpen && (
                 <div style={styles.menu}>
+                  <button type="button" style={styles.menuItem} onClick={() => navigate('/profile')}>
+                    个人信息
+                  </button>
                   <button type="button" style={styles.menuItem} onClick={handleLogout}>
                     退出登录
                   </button>
@@ -289,7 +297,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.98)',
     borderTop: '1px solid #dbe7fb',
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'repeat(4, 1fr)',
     gap: 8,
     padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
     zIndex: 40,

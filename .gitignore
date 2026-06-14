@@ -6,3 +6,6 @@ WsChat-zero/task/
 *~
 WsChat-zero/.playwright-mcp/
 WsChat-zero/web/node_modules
+*.png
+*.log
+.tmp

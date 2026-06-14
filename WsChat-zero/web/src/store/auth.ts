@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '@/api/client';
+import wsClient from '@/ws/client';
 import type { LoginResp, UserInfoResp } from '@/types';
 
 interface AuthState {
@@ -60,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
+    wsClient.disconnect();
     api.setToken(null);
     set({ token: null, user: null, userInfo: null });
   },

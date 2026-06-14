@@ -10,7 +10,7 @@ RUN CGO_ENABLED=0 go build -o /msg-store ./app/msg-store/cmd/
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /msg-store /app/msg-store
-COPY app/msg-store/etc/ /app/etc/
+COPY deploy/docker-config/msg-store.yaml /app/etc/msg-store.yaml
 WORKDIR /app
 EXPOSE 8094
 CMD ["/app/msg-store", "-f", "/app/etc/msg-store.yaml"]

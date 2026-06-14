@@ -9,6 +9,7 @@ import Register from '@/pages/Register';
 import Chat from '@/pages/Chat';
 import Contacts from '@/pages/Contacts';
 import Groups from '@/pages/Groups';
+import Profile from '@/pages/Profile';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/chat" replace />} />
       </Routes>

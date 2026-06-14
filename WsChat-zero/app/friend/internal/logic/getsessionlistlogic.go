@@ -2,12 +2,13 @@ package logic
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/zeromicro/go-zero/core/logx"
 
 	"github.com/your-org/ws-chat-zero/app/friend/internal/model"
 	"github.com/your-org/ws-chat-zero/app/friend/internal/svc"
 	"github.com/your-org/ws-chat-zero/app/friend/pb/pb"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type GetSessionListLogic struct {
@@ -36,8 +37,18 @@ func (l *GetSessionListLogic) GetSessionList(in *pb.GetSessionListRequest) (*pb.
 	}
 
 	var data []*pb.Session
+	seen := make(map[string]struct{}, len(sessions))
 	for i := range sessions {
+		key := sessionDedupKey(&sessions[i])
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
 		data = append(data, sessionModelToProto(&sessions[i]))
 	}
 	return &pb.SessionListResponse{Code: 0, Message: "ok", Data: data}, nil
+}
+
+func sessionDedupKey(s *model.Session) string {
+	return fmt.Sprintf("%d:%d", s.SessionType, s.PeerId)
 }

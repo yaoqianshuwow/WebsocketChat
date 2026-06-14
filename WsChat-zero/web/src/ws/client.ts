@@ -9,49 +9,49 @@ interface WsMessage {
 
 class WsClient {
   private ws: WebSocket | null = null;
-  private url: string = '';
+  private url = '';
+  private activeToken: string | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private handlers: Map<string, WsMessageHandler[]> = new Map();
   private shouldReconnect = true;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
+  private connectionSeq = 0;
 
   connect(token: string) {
+    if (this.activeToken === token && this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
+
+    this.disconnect(false);
+    this.activeToken = token;
     this.shouldReconnect = true;
     this.reconnectAttempts = 0;
     useChatStore.getState().setWsStatus('connecting');
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    // 开发环境直连代理
-    this.url = `${protocol}//${host}/wss?token=${token}`;
+    const defaultProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const defaultHost = window.location.host;
+    const baseUrl = import.meta.env.VITE_WS_BASE_URL || `${defaultProtocol}//${defaultHost}`;
+    this.url = `${baseUrl}/wss?token=${token}`;
 
     this.createConnection();
   }
 
   private createConnection() {
-    if (this.ws) {
-      this.ws.close();
-    }
+    const seq = ++this.connectionSeq;
+    const ws = new WebSocket(this.url);
+    this.ws = ws;
 
-    try {
-      this.ws = new WebSocket(this.url);
-    } catch (e) {
-      console.error('WS connect error:', e);
-      useChatStore.getState().setWsStatus('error', '连接建立失败');
-      this.scheduleReconnect();
-      return;
-    }
-
-    this.ws.onopen = () => {
-      console.log('WS connected');
+    ws.onopen = () => {
+      if (this.connectionSeq !== seq || this.ws !== ws) return;
       this.reconnectAttempts = 0;
       useChatStore.getState().setWsStatus('connected');
       this.startHeartbeat();
     };
 
-    this.ws.onmessage = (event) => {
+    ws.onmessage = (event) => {
+      if (this.connectionSeq !== seq || this.ws !== ws) return;
       try {
         const msg: WsMessage = JSON.parse(event.data);
         this.dispatch(msg);
@@ -60,16 +60,20 @@ class WsClient {
       }
     };
 
-    this.ws.onclose = () => {
-      console.log('WS disconnected');
+    ws.onclose = () => {
+      if (this.connectionSeq !== seq || this.ws !== ws) return;
       this.stopHeartbeat();
-       useChatStore.getState().setWsStatus(this.shouldReconnect ? 'reconnecting' : 'disconnected');
+      this.ws = null;
       if (this.shouldReconnect) {
+        useChatStore.getState().setWsStatus('reconnecting');
         this.scheduleReconnect();
+      } else {
+        useChatStore.getState().setWsStatus('disconnected');
       }
     };
 
-    this.ws.onerror = (e) => {
+    ws.onerror = (e) => {
+      if (this.connectionSeq !== seq || this.ws !== ws) return;
       console.error('WS error:', e);
       useChatStore.getState().setWsStatus('error');
     };
@@ -77,7 +81,6 @@ class WsClient {
 
   private scheduleReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('WS max reconnect attempts reached');
       useChatStore.getState().setWsStatus('disconnected', '重连失败');
       return;
     }
@@ -86,14 +89,18 @@ class WsClient {
     this.reconnectAttempts++;
     useChatStore.getState().setWsStatus('reconnecting', `正在重连（第 ${this.reconnectAttempts} 次）`);
 
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
+
     this.reconnectTimer = setTimeout(() => {
-      console.log(`WS reconnecting (attempt ${this.reconnectAttempts})...`);
       useChatStore.getState().setWsStatus('connecting', '重新建立连接');
       this.createConnection();
     }, delay);
   }
 
   private startHeartbeat() {
+    this.stopHeartbeat();
     this.heartbeatTimer = setInterval(() => {
       this.send({ type: 'heartbeat', data: {} });
     }, 30000);
@@ -114,10 +121,26 @@ class WsClient {
     return false;
   }
 
-  sendMessage(content: string, receiverId: number, chatType: number, sessionId: number, msgType = 1) {
+  sendMessage(
+    content: string,
+    receiverId: number,
+    chatType: number,
+    sessionId: number,
+    msgType = 1,
+    extra?: { fileUrl?: string; fileName?: string; fileSize?: number },
+  ) {
     return this.send({
       type: 'text',
-      data: { content, receiver_id: receiverId, chat_type: chatType, msg_type: msgType, session_id: sessionId },
+      data: {
+        content,
+        receiver_id: receiverId,
+        chat_type: chatType,
+        msg_type: msgType,
+        session_id: sessionId,
+        file_url: extra?.fileUrl,
+        file_name: extra?.fileName,
+        file_size: extra?.fileSize,
+      },
     });
   }
 
@@ -125,7 +148,6 @@ class WsClient {
     const handlers = this.handlers.get(msg.type) || [];
     handlers.forEach((h) => h(msg));
 
-    // "all" handler
     const allHandlers = this.handlers.get('*') || [];
     allHandlers.forEach((h) => h(msg));
   }
@@ -145,18 +167,27 @@ class WsClient {
     }
   }
 
-  disconnect() {
+  disconnect(clearStatus = true) {
     this.shouldReconnect = false;
+    this.activeToken = null;
+    this.connectionSeq++;
     this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     if (this.ws) {
-      this.ws.close();
+      const ws = this.ws;
       this.ws = null;
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
     }
-    useChatStore.getState().setWsStatus('disconnected');
+    if (clearStatus) {
+      useChatStore.getState().setWsStatus('disconnected');
+    }
   }
 }
 

@@ -27,6 +27,22 @@ type CommonResp struct {
 	Message string `json:"message"`
 }
 
+type UploadFileResp struct {
+	Code     int32  `json:"code"`
+	Message  string `json:"message"`
+	FileUrl  string `json:"fileUrl,optional"`
+	FileName string `json:"fileName,optional"`
+	FileSize int64  `json:"fileSize,optional"`
+}
+
+type UploadAvatarResp struct {
+	Code     int32  `json:"code"`
+	Message  string `json:"message"`
+	FileUrl  string `json:"fileUrl,optional"`
+	FileName string `json:"fileName,optional"`
+	FileSize int64  `json:"fileSize,optional"`
+}
+
 type ContactInfoReq struct {
 	ContactId int64 `json:"contactId"`
 }
@@ -46,8 +62,11 @@ type ContactVo struct {
 }
 
 type CreateGroupReq struct {
-	GroupName string  `json:"groupName"`
-	MemberIds []int64 `json:"memberIds,optional"`
+	GroupName string `json:"groupName"`
+}
+
+type SearchGroupListReq struct {
+	Keyword string `json:"keyword"`
 }
 
 type CreateSessionReq struct {
@@ -153,6 +172,8 @@ type MessageVo struct {
 	FileName   string `json:"fileName,optional"`
 	FileSize   int64  `json:"fileSize,optional"`
 	CreatedAt  int64  `json:"createdAt"`
+	SendName   string `json:"sendName,optional"`
+	SendAvatar string `json:"sendAvatar,optional"`
 }
 
 type PassContactApplyReq struct {
