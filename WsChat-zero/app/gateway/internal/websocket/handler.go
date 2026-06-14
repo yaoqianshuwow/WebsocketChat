@@ -142,14 +142,14 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 		senderName, senderAvatar := fetchSenderInfo(ctx, serverCtx, uid)
 
 		if payload.ChatType == 1 {
-			receiverSessionId := payload.SessionId
+			// === 单聊：消息存两份（发送方会话 + 接收方会话）===
 			peerSessionId, err := ensurePeerSession(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
 			if err != nil {
 				logx.Errorf("ensure peer session failed: sender=%d receiver=%d err=%v", uid, payload.ReceiverId, err)
 				return
 			}
-			receiverSessionId = peerSessionId
 
+			// 写发送方会话
 			if _, err := serverCtx.MsgClient.SendMessage(ctx, &msgpb.SendMessageRequest{
 				SenderId:     uid,
 				ReceiverId:   payload.ReceiverId,
@@ -167,6 +167,25 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 				return
 			}
 
+			// 写接收方会话（同一内容，不同 session_id）
+			if _, err := serverCtx.MsgClient.SendMessage(ctx, &msgpb.SendMessageRequest{
+				SenderId:     uid,
+				ReceiverId:   payload.ReceiverId,
+				ChatType:     payload.ChatType,
+				MsgType:      payload.MsgType,
+				Content:      payload.Content,
+				FileUrl:      payload.FileUrl,
+				FileSize:     payload.FileSize,
+				FileName:     payload.FileName,
+				SessionId:    peerSessionId,
+				SenderName:   senderName,
+				SenderAvatar: senderAvatar,
+			}); err != nil {
+				logx.Errorf("send message failed for receiver session: %v", err)
+				// 不 return — 发送方消息已写入，接收方下次拉取消息会同步
+			}
+
+			// 推送给发送方（用发送方的 sessionId）
 			_ = hub.SendToUser(uid, MessageEvent{
 				Type: "message:new",
 				Data: MessageEventData{
@@ -183,10 +202,11 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 					SendAvatar: senderAvatar,
 				},
 			})
+			// 推送给接收方（用接收方的 sessionId）
 			_ = hub.SendToUser(payload.ReceiverId, MessageEvent{
 				Type: "message:new",
 				Data: MessageEventData{
-					SessionId:  receiverSessionId,
+					SessionId:  peerSessionId,
 					SenderId:   uid,
 					ReceiverId: payload.ReceiverId,
 					ChatType:   payload.ChatType,
@@ -202,6 +222,7 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 			return
 		}
 
+		// === 群聊 ===
 		groupName, sessionByUser, err := ensureGroupSessions(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
 		if err != nil {
 			logx.Errorf("ensure group sessions failed: sender=%d group=%d err=%v", uid, payload.ReceiverId, err)
