@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/your-org/ws-chat-zero/app/file/fileservice"
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/svc"
@@ -54,7 +55,7 @@ func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.UploadAva
 		return &types.UploadAvatarResp{Code: 1, Message: msg}, nil
 	}
 
-	// 更新用户头像
+	// 更新用户头像 — 存原始 fileUrl（fileRPC 能查到）
 	_, err = l.svcCtx.UserClient.UpdateUserInfo(l.ctx, &userservice.UpdateUserInfoRequest{
 		UserId: userId,
 		Avatar: fileResp.FileUrl,
@@ -63,10 +64,13 @@ func (l *UploadAvatarLogic) UploadAvatar(r *http.Request) (resp *types.UploadAva
 		return &types.UploadAvatarResp{Code: 1, Message: "更新头像失败"}, nil
 	}
 
+	// 返回 gateway 可访问的 URL（viewFile 作为代理）
+	displayUrl := "/api/v1/message/viewFile?fileUrl=" + url.QueryEscape(fileResp.FileUrl)
+
 	return &types.UploadAvatarResp{
 		Code:     0,
 		Message:  "头像上传成功",
-		FileUrl:  fileResp.FileUrl,
+		FileUrl:  displayUrl,
 		FileName: header.Filename,
 		FileSize: fileResp.FileSize,
 	}, nil

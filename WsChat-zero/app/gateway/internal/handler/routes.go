@@ -19,7 +19,7 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
-	// WebSocket 路由
+	// WebSocket
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
 		Path:   "/wss",
@@ -33,6 +33,14 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		Path:   "/api/v1/message/downloadFile",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
 			Message.DownloadFileHandlerWithAuth(w, r, serverCtx)
+		},
+	})
+	// 文件预览（手动鉴权，供 img 显示头像/图片）
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/api/v1/message/viewFile",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			Message.ViewFileHandlerWithAuth(w, r, serverCtx)
 		},
 	})
 	server.AddRoutes(

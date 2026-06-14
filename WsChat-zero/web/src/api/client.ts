@@ -43,9 +43,9 @@ class ApiClient {
     return res.json();
   }
 
-  private async upload<T>(path: string, file: File, extra?: Record<string, string>) {
+  private async upload<T>(path: string, file: File, fieldName = 'file', extra?: Record<string, string>) {
     const form = new FormData();
-    form.append('file', file);
+    form.append(fieldName, file);
     Object.entries(extra || {}).forEach(([key, value]) => form.append(key, value));
 
     const headers: Record<string, string> = {};
@@ -185,7 +185,7 @@ class ApiClient {
   }
 
   uploadAvatar(file: File) {
-    return this.upload<import('../types').UploadAvatarResp>('/message/uploadAvatar', file);
+    return this.upload<import('../types').UploadAvatarResp>('/message/uploadAvatar', file, 'avatar');
   }
 
   downloadFile(fileUrl: string) {

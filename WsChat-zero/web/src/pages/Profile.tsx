@@ -61,6 +61,7 @@ export default function Profile() {
       const resp = await api.uploadAvatar(file);
       if (resp.code === 0 && resp.fileUrl) {
         setForm((prev) => ({ ...prev, avatar: resp.fileUrl || '' }));
+        await loadUserInfo();
         alert('头像上传成功');
       } else {
         alert(resp.message);

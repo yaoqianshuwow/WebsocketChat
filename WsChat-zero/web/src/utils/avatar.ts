@@ -10,9 +10,26 @@ function stableIndex(seed: number | string | undefined) {
   return hash % AVATAR_POOL.length;
 }
 
+function getToken(): string {
+  return localStorage.getItem('token') || '';
+}
+
+function wrapFileUrl(url: string): string {
+  if (url && url.includes('/files/')) {
+    const token = getToken();
+    if (token) {
+      // Use same origin as API client (gateway port)
+      const base = import.meta.env.VITE_API_BASE_URL as string || '';
+      const apiOrigin = base ? base.replace(/\/api\/v1$/, '') : window.location.origin;
+      return `${apiOrigin}/api/v1/message/viewFile?fileUrl=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`;
+    }
+  }
+  return url;
+}
+
 export function pickAvatar(seed: number | string | undefined, avatar?: string) {
   if (avatar && !avatar.includes('�')) {
-    return avatar;
+    return wrapFileUrl(avatar);
   }
   return AVATAR_POOL[stableIndex(seed)];
 }

@@ -222,8 +222,8 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 			return
 		}
 
-		// === 群聊 ===
-		groupName, sessionByUser, err := ensureGroupSessions(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
+		// === 群聊：消息存一份（群列表 API 用 receiver_id=groupId 查，不按 session）===
+		_, sessionByUser, err := ensureGroupSessions(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
 		if err != nil {
 			logx.Errorf("ensure group sessions failed: sender=%d group=%d err=%v", uid, payload.ReceiverId, err)
 			return
@@ -252,8 +252,10 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 			return
 		}
 
-		logx.Infof("group message enqueued: sender=%d group=%d session=%d name=%s", uid, payload.ReceiverId, senderSessionId, groupName)
 		for userId, sessionId := range sessionByUser {
+			if userId == uid {
+				continue // 不发给自己，前端已有本地消息
+			}
 			_ = hub.SendToUser(userId, MessageEvent{
 				Type: "message:new",
 				Data: MessageEventData{
