@@ -1,11 +1,8 @@
 FROM golang:1.26-alpine AS builder
 RUN apk add --no-cache build-base
-WORKDIR /ws-chat
-COPY go.work go.work.sum ./
-COPY proto/ proto/
-COPY pkg/ pkg/
-COPY app/msg-forward/ app/msg-forward/
-RUN CGO_ENABLED=0 go build -o /msg-forward ./app/msg-forward/
+WORKDIR /build
+COPY app/msg-forward/ ./
+RUN GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 go build -o /msg-forward .
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata

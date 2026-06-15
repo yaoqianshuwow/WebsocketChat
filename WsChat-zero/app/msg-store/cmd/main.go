@@ -19,6 +19,8 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	logx.MustSetup(c.RestConf.Log)
+	// 手动初始化 Telemetry（因为 msg-store 不是 rest/zrpc server，不会自动初始化）
+	c.RestConf.MustSetUp()
 
 	ctx := svc.NewServiceContext(c)
 

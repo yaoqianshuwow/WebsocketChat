@@ -32,3 +32,9 @@ JwtAuth:
   AccessSecret: ws-chat-zero-secret-key-2026
 Mysql:
   DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+
+Telemetry:
+  Name: gateway-api
+  Batcher: otlpgrpc
+  Endpoint: localhost:4317
+  Sampler: 1.0

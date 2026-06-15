@@ -7,6 +7,12 @@ type Config struct {
 	Mysql       MysqlConf
 	BizRedis    RedisConf // 业务 Redis（需加 Tag 避免与 RpcServerConf.Redis 冲突）
 	JwtAuth     JwtAuthConf
+	ES          ESConfig
+}
+
+type ESConfig struct {
+	Addresses []string
+	Index     string `json:",default=users"`
 }
 
 type MysqlConf struct {

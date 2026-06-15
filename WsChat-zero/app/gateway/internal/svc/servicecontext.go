@@ -1,14 +1,14 @@
 package svc
 
 import (
-	"github.com/zeromicro/go-zero/rest"
-	"github.com/zeromicro/go-zero/zrpc"
-	"github.com/your-org/ws-chat-zero/app/gateway/internal/config"
-	"github.com/your-org/ws-chat-zero/app/gateway/internal/middleware"
 	filepb "github.com/your-org/ws-chat-zero/app/file/fileservice"
 	friendpb "github.com/your-org/ws-chat-zero/app/friend/friendservice"
+	"github.com/your-org/ws-chat-zero/app/gateway/internal/config"
+	"github.com/your-org/ws-chat-zero/app/gateway/internal/middleware"
 	msgpb "github.com/your-org/ws-chat-zero/app/msg-forward/messageservice"
 	userpb "github.com/your-org/ws-chat-zero/app/user/userservice"
+	"github.com/zeromicro/go-zero/rest"
+	"github.com/zeromicro/go-zero/zrpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -47,8 +47,17 @@ func NewServiceContext(c config.Config) *ServiceContext {
 }
 
 func buildClientConf(conf config.RpcConf) zrpc.RpcClientConf {
-	if len(conf.Etcd.Hosts) > 0 && len(conf.Etcd.Key) > 0 {
-		return zrpc.RpcClientConf{Etcd: conf.Etcd}
+	rpcConf := zrpc.RpcClientConf{
+		Middlewares: zrpc.ClientMiddlewaresConf{Trace: true},
 	}
-	return zrpc.RpcClientConf{Target: conf.Target}
+	if conf.Target != "" {
+		rpcConf.Target = conf.Target
+		return rpcConf
+	}
+	if len(conf.Etcd.Hosts) > 0 && len(conf.Etcd.Key) > 0 {
+		rpcConf.Etcd = conf.Etcd
+		return rpcConf
+	}
+	rpcConf.Target = conf.Target
+	return rpcConf
 }

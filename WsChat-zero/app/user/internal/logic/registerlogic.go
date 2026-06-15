@@ -1,8 +1,10 @@
 package logic
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -58,9 +60,48 @@ func (l *RegisterLogic) Register(in *pb.RegisterRequest) (*pb.RegisterResponse, 
 		return &pb.RegisterResponse{Code: -1, Message: "注册失败"}, nil
 	}
 
+	// 同步用户到 ES（异步非阻塞，失败不影响注册）
+	go l.indexUserToES(&user)
+
 	return &pb.RegisterResponse{
 		Code:    0,
 		Message: "注册成功",
 		UserId:  user.Id,
 	}, nil
+}
+
+func (l *RegisterLogic) indexUserToES(user *model.UserInfo) {
+	if l.svcCtx.ES == nil {
+		return
+	}
+
+	doc := map[string]any{
+		"user_id":    user.Id,
+		"username":   user.Username,
+		"nickname":   user.Nickname,
+		"phone":      user.Phone,
+		"avatar":     user.Avatar,
+		"status":     user.Status,
+		"created_at": user.CreatedAt.Format(time.RFC3339),
+	}
+
+	body, _ := json.Marshal(doc)
+	index := l.svcCtx.Config.ES.Index
+	if index == "" {
+		index = "users"
+	}
+
+	resp, err := l.svcCtx.ES.Index(index, bytes.NewReader(body),
+		l.svcCtx.ES.Index.WithDocumentID(fmt.Sprintf("%d", user.Id)))
+	if err != nil {
+		logx.Errorf("ES index user error: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.IsError() {
+		logx.Errorf("ES index user error response: %s", resp.String())
+		return
+	}
+	logx.Infof("user indexed to ES: id=%d username=%s", user.Id, user.Username)
 }

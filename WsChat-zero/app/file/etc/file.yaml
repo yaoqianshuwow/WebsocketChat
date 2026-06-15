@@ -13,3 +13,9 @@ Mysql:
 FileConfig:
   StoragePath: ./storage/files
   BaseUrl: http://localhost:9094/files
+
+Telemetry:
+  Name: file.rpc
+  Batcher: otlpgrpc
+  Endpoint: localhost:4317
+  Sampler: 1.0

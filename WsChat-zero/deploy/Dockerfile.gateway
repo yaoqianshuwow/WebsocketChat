@@ -2,18 +2,9 @@
 FROM golang:1.26-alpine AS builder
 RUN apk add --no-cache build-base
 
-WORKDIR /ws-chat
-COPY go.work go.work.sum ./
-COPY proto/ proto/
-COPY pkg/ pkg/
-COPY app/gateway/ app/gateway/
-COPY app/user/ app/user/
-COPY app/friend/ app/friend/
-COPY app/file/ app/file/
-COPY app/msg-forward/ app/msg-forward/
-COPY app/voice/ app/voice/
-
-RUN CGO_ENABLED=0 go build -o /gateway ./app/gateway/
+WORKDIR /build
+COPY app/gateway/ ./
+RUN GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 go build -o /gateway .
 
 # 阶段 2：运行
 FROM alpine:3.20

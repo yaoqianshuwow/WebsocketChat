@@ -22,10 +22,13 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	_ = db.AutoMigrate(&model.Message{})
 
-	writer := &kafka.Writer{
-		Addr:     kafka.TCP(c.Kafka.Brokers...),
-		Topic:    c.Kafka.ChatTopic,
-		Balancer: &kafka.LeastBytes{},
+	var writer *kafka.Writer
+	if c.StoreMode != "direct" {
+		writer = &kafka.Writer{
+			Addr:     kafka.TCP(c.Kafka.Brokers...),
+			Topic:    c.Kafka.ChatTopic,
+			Balancer: &kafka.LeastBytes{},
+		}
 	}
 
 	return &ServiceContext{

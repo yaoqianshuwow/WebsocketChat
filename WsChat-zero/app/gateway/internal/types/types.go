@@ -212,6 +212,21 @@ type SearchUsersResp struct {
 	Total   int64          `json:"total"`
 }
 
+type SearchMessagesReq struct {
+	Keyword   string `json:"keyword,optional"`
+	SenderId  int64  `json:"senderId,optional"`
+	SessionId int64  `json:"sessionId,optional"`
+	StartTime int64  `json:"startTime,optional"`
+	EndTime   int64  `json:"endTime,optional"`
+	Page      int64  `json:"page,optional"`
+	Size      int64  `json:"size,optional"`
+}
+
+type GetRecentMessagesReq struct {
+	SessionId int64 `json:"sessionId"`
+	Limit     int64 `json:"limit,optional"`
+}
+
 type SessionListResp struct {
 	Code    int32       `json:"code,optional"`
 	Message string      `json:"message"`

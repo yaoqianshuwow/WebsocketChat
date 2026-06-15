@@ -1,0 +1,8 @@
+{"@timestamp":"2026-06-15T21:27:22.773+08:00","caller":"zrpc/server.go:90","content":"listen tcp 0.0.0.0:9092: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.","level":"error"}
+panic: listen tcp 0.0.0.0:9092: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+
+goroutine 1 [running]:
+github.com/zeromicro/go-zero/zrpc.(*RpcServer).Start(0x7ff770b5e540?)
+	github.com/zeromicro/go-zero@v1.10.2/zrpc/server.go:91 +0x77
+main.main()
+	github.com/your-org/ws-chat-zero/app/msg-forward/msg.go:38 +0x259

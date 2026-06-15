@@ -4,8 +4,9 @@ import "github.com/zeromicro/go-zero/zrpc"
 
 type Config struct {
 	zrpc.RpcServerConf
-	Kafka   KafkaConf
-	Mysql   MysqlConf
+	Kafka     KafkaConf
+	Mysql     MysqlConf
+	StoreMode string `json:",optional,default=kafka,options=kafka|direct"`
 }
 
 type KafkaConf struct {

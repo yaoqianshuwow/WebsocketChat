@@ -1,9 +1,7 @@
-exit status 0xffffffff
-13T16:35:17.382+08:00","caller":"zrpc/server.go:90","content":"listen tcp 0.0.0.0:9091: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.","level":"error"}
-panic: listen tcp 0.0.0.0:9091: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+panic: dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.
 
 goroutine 1 [running]:
-github.com/zeromicro/go-zero/zrpc.(*RpcServer).Start(0x7ff615dbf840?)
-	C:/Users/28407/go/pkg/mod/github.com/zeromicro/go-zero@v1.10.2/zrpc/server.go:91 +0x77
+github.com/your-org/ws-chat-zero/app/user/internal/svc.NewServiceContext({{{{0x366eccc1cca0, 0x8}, {{...}, {...}, {...}, {...}, {...}, {...}, 0x0, 0x0, ...}, ...}, ...}, ...})
+	github.com/your-org/ws-chat-zero/app/user/internal/svc/servicecontext.go:20 +0x2ca
 main.main()
-	C:/Users/28407/Desktop/goproject/WebsocketChat/WsChat-zero/app/user/user.go:38 +0x259
+	github.com/your-org/ws-chat-zero/app/user/user.go:26 +0x105

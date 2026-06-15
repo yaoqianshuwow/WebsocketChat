@@ -1,0 +1,7 @@
+panic: dial tcp 127.0.0.1:3306: connectex: No connection could be made because the target machine actively refused it.
+
+goroutine 1 [running]:
+github.com/your-org/ws-chat-zero/app/file/internal/svc.NewServiceContext({{{{0x38ba5de8c9a0, 0x8}, {{...}, {...}, {...}, {...}, {...}, {...}, 0x0, 0x0, ...}, ...}, ...}, ...})
+	github.com/your-org/ws-chat-zero/app/file/internal/svc/servicecontext.go:18 +0x246
+main.main()
+	github.com/your-org/ws-chat-zero/app/file/file.go:26 +0x113

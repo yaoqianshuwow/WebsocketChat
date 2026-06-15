@@ -175,6 +175,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				},
 				{
 					Method:  http.MethodPost,
+					Path:    "/api/v1/message/searchMessages",
+					Handler: Message.SearchMessagesHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodPost,
+					Path:    "/api/v1/message/getRecentMessages",
+					Handler: Message.GetRecentMessagesHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodPost,
 					Path:    "/api/v1/message/uploadFile",
 					Handler: Message.UploadFileHandler(serverCtx),
 				},

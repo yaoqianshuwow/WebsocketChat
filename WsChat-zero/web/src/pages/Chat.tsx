@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import SessionList from '@/components/SessionList';
 import MessageList from '@/components/MessageList';
 import MessageInput from '@/components/MessageInput';
@@ -7,12 +8,27 @@ import { useChatStore } from '@/store/chat';
 export default function Chat() {
   const isMobile = useMobile();
   const { currentSession, setCurrentSession } = useChatStore();
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+
+  // 手机端输入框聚焦时，滚动到底部避免键盘遮挡
+  useEffect(() => {
+    if (!isMobile || !currentSession) return;
+    const timer = setTimeout(() => {
+      if (chatAreaRef.current) {
+        chatAreaRef.current.scrollTop = chatAreaRef.current.scrollHeight;
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentSession, isMobile]);
 
   return (
     <div style={{ ...styles.container, ...(isMobile ? styles.containerMobile : {}) }}>
       {(!isMobile || !currentSession) && <SessionList />}
       {(!isMobile || currentSession) && (
-        <div style={{ ...styles.chatArea, ...(isMobile ? styles.chatAreaMobile : {}) }}>
+        <div
+          ref={chatAreaRef}
+          style={{ ...styles.chatArea, ...(isMobile ? styles.chatAreaMobile : {}) }}
+        >
           {isMobile && currentSession && (
             <div style={styles.mobileChatHeader}>
               <button type="button" style={styles.mobileBackBtn} onClick={() => setCurrentSession(null)}>
@@ -55,13 +71,17 @@ const styles: Record<string, React.CSSProperties> = {
   },
   containerMobile: {
     flexDirection: 'column',
-    padding: 8,
+    padding: 0,
     gap: 0,
+    overflow: 'auto',      // 允许滚动，解决键盘弹出页面跑飞
+    WebkitOverflowScrolling: 'touch',
   },
   chatAreaMobile: {
-    height: '100%',
-    flex: 1,
-    borderRadius: 18,
+    height: 'auto',         // 不固定高度，随内容撑开
+    flex: '1 1 auto',
+    borderRadius: 0,
+    overflow: 'visible',    // 不裁剪内容
+    minHeight: '100%',
   },
   mobileChatHeader: {
     padding: '10px 12px',

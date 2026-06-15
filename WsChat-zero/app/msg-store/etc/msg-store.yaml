@@ -21,3 +21,9 @@ ES:
   Addresses:
     - http://localhost:9200
   Index: chat_messages
+
+Telemetry:
+  Name: msg-store
+  Batcher: otlpgrpc
+  Endpoint: localhost:4317
+  Sampler: 1.0

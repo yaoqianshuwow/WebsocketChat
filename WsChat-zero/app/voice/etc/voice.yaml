@@ -11,3 +11,9 @@ BaiduAsr:
   AppId: ""
   ApiKey: ""
   SecretKey: ""
+
+Telemetry:
+  Name: voice.rpc
+  Batcher: otlpgrpc
+  Endpoint: localhost:4317
+  Sampler: 1.0

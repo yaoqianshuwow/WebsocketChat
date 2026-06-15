@@ -120,27 +120,35 @@ export default function Layout() {
           </header>
         )}
 
-        <section style={{ ...styles.content, ...(isMobile ? styles.contentMobile : {}) }}>
-          <Outlet />
-        </section>
-
+        {/* 手机端顶部导航栏 */}
         {isMobile && (
-          <nav style={styles.bottomNav}>
+          <nav style={styles.topNav}>
             {navItems.map((item) => (
               <button
                 key={item.path}
                 type="button"
                 style={{
-                  ...styles.bottomNavItem,
-                  ...(currentPath === item.path ? styles.bottomNavItemActive : {}),
+                  ...styles.topNavItem,
+                  ...(currentPath === item.path ? styles.topNavItemActive : {}),
                 }}
                 onClick={() => navigate(item.path)}
               >
                 {item.label}
               </button>
             ))}
+            <button
+              type="button"
+              style={{ ...styles.topNavItem, ...styles.logoutBtn }}
+              onClick={handleLogout}
+            >
+              退出
+            </button>
           </nav>
         )}
+
+        <section style={{ ...styles.content, ...(isMobile ? styles.contentMobile : {}) }}>
+          <Outlet />
+        </section>
       </main>
     </div>
   );
@@ -148,7 +156,7 @@ export default function Layout() {
 
 const styles: Record<string, React.CSSProperties> = {
   shell: {
-    height: '100vh',
+    height: '100dvh',
     display: 'grid',
     gridTemplateColumns: '236px minmax(0, 1fr)',
     background: 'linear-gradient(180deg, #f5f9ff 0%, #eef4ff 100%)',
@@ -161,6 +169,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     gridTemplateColumns: 'minmax(0, 1fr)',
     boxShadow: 'none',
+    overflow: 'auto',
+    WebkitOverflowScrolling: 'touch',
   },
   sidebar: {
     padding: 16,
@@ -285,35 +295,39 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     overflow: 'hidden',
   },
-  contentMobile: {
-    paddingBottom: 72,
-  },
-  bottomNav: {
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 64,
-    background: 'rgba(255,255,255,0.98)',
-    borderTop: '1px solid #dbe7fb',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 8,
-    padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
+  // 手机端顶部导航（原底部导航改为顶部）
+  topNav: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '8px 10px',
+    background: '#4a90d9',
+    borderBottom: '1px solid #dbe7fb',
     zIndex: 40,
-    boxShadow: '0 -12px 30px rgba(31, 64, 122, 0.08)',
   },
-  bottomNavItem: {
-    border: '1px solid #dbe7fb',
-    borderRadius: 14,
-    background: '#f7fbff',
-    color: '#456',
+  topNavItem: {
+    height: 34,
+    padding: '0 14px',
+    borderRadius: 10,
+    border: '1px solid rgba(255,255,255,0.3)',
+    background: 'rgba(255,255,255,0.12)',
+    color: '#fff',
     fontSize: 13,
     fontWeight: 700,
+    whiteSpace: 'nowrap',
   },
-  bottomNavItemActive: {
-    background: '#4a90d9',
-    borderColor: '#4a90d9',
-    color: '#fff',
+  topNavItemActive: {
+    background: '#fff',
+    borderColor: '#fff',
+    color: '#4a90d9',
+  },
+  logoutBtn: {
+    marginLeft: 'auto',
+    background: 'rgba(255,80,80,0.25)',
+    borderColor: 'rgba(255,80,80,0.35)',
+  },
+  // 手机端内容区（顶部留出导航栏空间）
+  contentMobile: {
+    paddingTop: 0,
   },
 };
