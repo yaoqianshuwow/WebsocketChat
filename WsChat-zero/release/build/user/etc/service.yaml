@@ -16,6 +16,11 @@ JwtAuth:
   AccessSecret: ws-chat-zero-secret-key-2026
   AccessExpire: 86400
 
+ES:
+  Addresses:
+    - http://elasticsearch:9200
+  Index: users
+
 Telemetry:
   Name: user.rpc
   Batcher: otlpgrpc

@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '@/api/client';
 import { useAuthStore } from '@/store/auth';
 import { useChatStore } from '@/store/chat';
+import { useMobile } from '@/hooks/useMobile';
 import wsClient from '@/ws/client';
 import type { MessageVo } from '@/types';
 
@@ -9,10 +10,29 @@ export default function MessageInput() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { currentSession, addMessage, markMessageStatus, wsState } = useChatStore();
   const { user, userInfo } = useAuthStore();
+  const isMobile = useMobile();
 
   const userId = user?.userId ?? user?.user_id ?? userInfo?.user_id ?? 0;
+
+  // 手机端输入框聚焦时，将输入区域滚到可视区
+  useEffect(() => {
+    if (!isMobile || !currentSession) return;
+    const handleFocus = () => {
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 300);
+    };
+    const el = inputRef.current;
+    if (el) {
+      el.addEventListener('focus', handleFocus);
+      return () => el.removeEventListener('focus', handleFocus);
+    }
+  }, [currentSession, isMobile]);
 
   if (!currentSession) {
     return null;
@@ -117,12 +137,13 @@ export default function MessageInput() {
 
       <div style={styles.editor}>
         <textarea
-          style={styles.input}
+          ref={inputRef}
+          style={{ ...styles.input, ...(isMobile ? styles.inputMobile : {}) }}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="输入消息，Enter 发送，Shift + Enter 换行"
-          rows={3}
+          rows={isMobile ? 2 : 3}
         />
         <button type="button" style={styles.sendBtn} onClick={handleSend} disabled={!text.trim() || busy}>
           发送
@@ -139,6 +160,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.96)',
     display: 'grid',
     gap: 10,
+    // 手机端固定在底部
   },
   toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   toolBtn: {
@@ -162,6 +184,11 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#f8fbff',
     color: '#333',
     lineHeight: 1.6,
+  },
+  inputMobile: {
+    minHeight: 56,
+    maxHeight: 100,
+    fontSize: 16, // iOS 防止键盘缩放
   },
   sendBtn: {
     minWidth: 88,

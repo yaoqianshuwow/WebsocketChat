@@ -33,6 +33,7 @@ class WsClient {
     const defaultProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const defaultHost = window.location.host;
     const baseUrl = import.meta.env.VITE_WS_BASE_URL || `${defaultProtocol}//${defaultHost}`;
+    console.log("🟢 WS connecting to:", baseUrl + "/wss?token=" + token.substring(0,10) + "...");
     this.url = `${baseUrl}/wss?token=${token}`;
 
     this.createConnection();

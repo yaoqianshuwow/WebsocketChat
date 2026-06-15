@@ -142,9 +142,12 @@ services:
     container_name: wschat-msg-store
     restart: always
     depends_on:
-      - mysql
-      - kafka
-      - elasticsearch
+      mysql:
+        condition: service_started
+      kafka:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
     networks:
       - wschat-net
 
