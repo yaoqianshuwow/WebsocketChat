@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI PPT 智能体 — 交互演示</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* 幻灯片容器 */
+        .presentation {
+            width: 100%;
+            max-width: 1100px;
+            aspect-ratio: 16 / 9;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            padding: 50px 70px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateX(40px);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+        }
+        .slide.exit {
+            opacity: 0;
+            transform: translateX(-40px);
+        }
+
+        /* 主题色变量 */
+        .slide.theme-light {
+            background: #ffffff;
+            color: #222;
+        }
+        .slide.theme-dark {
+            background: #0b101a;
+            color: #d9e2ec;
+        }
+        .slide.theme-accent {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .slide.theme-green {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+        }
+        .slide.theme-orange {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        /* 封面标题 */
+        .slide h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+        .slide h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            line-height: 1.3;
+        }
+        .slide h3 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .slide p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        .slide .subtitle {
+            font-size: 22px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
+        .slide .meta {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-top: auto;
+            margin-bottom: 0;
+        }
+
+        /* 内容布局 */
+        .slide .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 16px;
+            flex: 1;
+        }
+        .slide .content-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .slide .card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(4px);
+        }
+        .slide.theme-light .card {
+            background: #f8f9fa;
+            border-color: #e0e0e0;
+        }
+        .slide .card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .slide .card p, .slide .card li {
+            font-size: 14px;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+        .slide .card ul {
+            padding-left: 18px;
+        }
+        .slide .card ul li {
+            margin-bottom: 4px;
+        }
+
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .step-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: all 0.3s;
+        }
+        .step-dot.active { background: white; transform: scale(1.3); }
+        .step-dot.done { background: rgba(255,255,255,0.6); }
+        .theme-light .step-dot { background: #ccc; }
+        .theme-light .step-dot.active { background: #667eea; }
+        .theme-light .step-dot.done { background: #999; }
+
+        /* 代码块 */
+        .code-block {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+        .code-block .keyword { color: #cba6f7; }
+        .code-block .string { color: #a6e3a1; }
+        .code-block .comment { color: #6c7086; }
+        .code-block .function { color: #89b4fa; }
+
+        /* 导航 */
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1100px;
+            padding: 0 8px;
+        }
+        .nav-btn {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-btn.prev {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+        }
+        .nav-btn.prev:hover { background: rgba(255,255,255,0.2); color: white; }
+        .nav-btn.next {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .nav-btn.next:hover { opacity: 0.9; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .slide-counter {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+        }
+
+        /* 动画高亮 */
+        .highlight {
+            display: inline-block;
+            background: linear-gradient(120deg, #667eea33 0%, #667eea33 40%, #764ba233 100%);
+            padding: 0 8px;
+            border-radius: 4px;
+        }
+
+        /* 交互式演示 - 模拟下载按钮 */
+        .demo-download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 12px;
+        }
+        .demo-download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.4);
+        }
+        .demo-download-btn:active {
+            transform: translateY(0);
+        }
+        .demo-download-btn .icon {
+            font-size: 24px;
+        }
+
+        /* 流程演示框 */
+        .flow-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        .flow-step {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 100px;
+            font-size: 14px;
+        }
+        .theme-light .flow-step {
+            background: #f0f4ff;
+            border-color: #d0d8f0;
+        }
+        .flow-step .step-icon { font-size: 28px; margin-bottom: 4px; }
+        .flow-arrow { font-size: 20px; opacity: 0.5; }
+
+        /* 功能亮点卡 */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+            flex: 1;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .theme-light .feature-card {
+            background: #f8f9fa;
+            border-color: #e0e0e0;
+        }
+        .feature-card:hover { transform: translateY(-4px); }
+        .feature-card .f-icon { font-size: 36px; margin-bottom: 10px; }
+        .feature-card h4 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+        .feature-card p { font-size: 13px; opacity: 0.7; }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .slide { padding: 30px 24px; }
+            .slide h1 { font-size: 28px; }
+            .slide h2 { font-size: 24px; }
+            .slide h3 { font-size: 20px; }
+            .slide p { font-size: 15px; }
+            .slide .content-grid { grid-template-columns: 1fr; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .flow-box { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="presentation" id="presentation">
+    <!-- 第1页: 封面 -->
+    <div class="slide theme-accent active" data-index="0">
+        <h1>📊 AI PPT 智能体</h1>
+        <p class="subtitle">新一代智能演示文稿生成系统</p>
+        <p style="margin-top: 20px; font-size: 20px; opacity: 0.85;">
+            输入主题 → AI 自动生成 → 一键下载
+        </p>
+        <div style="margin-top: 30px; display: flex; gap: 16px;">
+            <span class="flow-step" style="border-color: rgba(255,255,255,0.3);">🤖 AI 编排</span>
+            <span class="flow-step" style="border-color: rgba(255,255,255,0.3);">🎨 5种风格</span>
+            <span class="flow-step" style="border-color: rgba(255,255,255,0.3);">📥 一键下载</span>
+        </div>
+        <p class="meta">按 <strong>→</strong> 或点击「下一页」开始演示 · 第 1 / 15 页</p>
+    </div>
+
+    <!-- 第2页: 系统架构概览 -->
+    <div class="slide theme-light" data-index="1">
+        <h2>🏗️ 系统架构概览</h2>
+        <p style="opacity: 0.6; margin-bottom: 16px;">后端 Go 服务 + AI 模型集群 + 前端</p>
+        <div class="content-grid">
+            <div class="content-col">
+                <div class="card">
+                    <h4>⚙️ 后端服务 (Go + Hertz)</h4>
+                    <ul>
+                        <li>高性能 HTTP 框架</li>
+                        <li>Eino DAG 工作流编排</li>
+                        <li>8 节点并行流水线</li>
+                        <li>Token 用量监控</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🧠 AI 模型集群</h4>
+                    <ul>
+                        <li><strong>agnes-2.0-flash</strong> → 文案生成</li>
+                        <li><strong>agnes-image-2.0-flash</strong> → 配图/插画</li>
+                        <li><strong>deepseek-v4-flash</strong> → 质检</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="content-col">
+                <div class="card">
+                    <h4>🌐 前端 (HTML + CSS + JS)</h4>
+                    <ul>
+                        <li>响应式单页应用</li>
+                        <li>风格选择器 (5种风格)</li>
+                        <li>实时状态轮询</li>
+                        <li>一键下载 PPTX</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>📄 文件生成</h4>
+                    <ul>
+                        <li>Python python-pptx 引擎</li>
+                        <li>16:9 宽屏版式</li>
+                        <li>封面 · 目录 · 内容 · 图表 · 致谢</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <p class="meta">🔗 API: /api/ppt/generate · /api/ppt/status · /api/ppt/download/:taskId · /api/ppt/preview/:taskId</p>
+    </div>
+
+    <!-- 第3页: DAG 工作流 -->
+    <div class="slide theme-dark" data-index="2">
+        <h2>🔄 DAG 并行工作流</h2>
+        <p style="opacity: 0.6; margin-bottom: 14px;">Eino compose.NewGraph — 8 节点异步编排</p>
+        <div class="flow-box">
+            <div class="flow-step"><div class="step-icon">📝</div>PPT计划<br><small>agnes-2.0</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="step-icon">🔍</div>文案预检<br><small>deepseek</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step" style="border-style: dashed;"><div class="step-icon">🖼️</div>4× 并行收集<br><small>agnes-image</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="step-icon">🛡️</div>图片质检</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="step-icon">📦</div>PPT 合并<br><small>python-pptx</small></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="step-icon">✅</div>成品终检</div>
+        </div>
+        <div class="code-block">
+            <span class="comment">// 8节点 DAG 并行流水线</span><br>
+            g.AddEdge(START, <span class="string">"ppt_plan"</span>)<br>
+            g.AddEdge(<span class="string">"ppt_plan"</span>, <span class="string">"pre_quality_check"</span>)<br>
+            <span class="comment">// 4个收集器并行执行</span><br>
+            g.AddEdge(<span class="string">"pre_quality_check"</span>, <span class="string">"content_image_collector"</span>)<br>
+            g.AddEdge(<span class="string">"pre_quality_check"</span>, <span class="string">"illustration_collector"</span>)<br>
+            g.AddEdge(<span class="string">"pre_quality_check"</span>, <span class="string">"diagram_collector"</span>)<br>
+            g.AddEdge(<span class="string">"pre_quality_check"</span>, <span class="string">"logo_collector"</span>)
+        </div>
+    </div>
+
+    <!-- 第4页: 使用流程 -->
+    <div class="slide theme-green" data-index="3">
+        <h2>🚀 三步快速使用</h2>
+        <p style="opacity: 0.85; margin-bottom: 20px;">从打开页面到下载完成，只需 3 步</p>
+        <div class="feature-grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="feature-card" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2);">
+                <div class="f-icon">🎯</div>
+                <h4>1. 输入主题</h4>
+                <p>输入 PPT 主题，例如"保护大熊猫"、"人工智能趋势"、"年度总结"</p>
+            </div>
+            <div class="feature-card" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2);">
+                <div class="f-icon">🎨</div>
+                <h4>2. 选择风格</h4>
+                <p>简约 · 商务 · 科技 · 创意 · 学术 — 5 种专业视觉风格可选</p>
+            </div>
+            <div class="feature-card" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2);">
+                <div class="f-icon">📥</div>
+                <h4>3. 生成下载</h4>
+                <p>点击生成，等待 30-60 秒，完成后一键下载 .pptx 文件</p>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; margin-top: 12px;">
+            <a href="/" target="_blank" class="demo-download-btn" style="font-size: 16px; padding: 12px 28px;">
+                <span class="icon">✨</span> 立即体验
+            </a>
+        </div>
+    </div>
+
+    <!-- 第5页: 下载演示 -->
+    <div class="slide theme-light" data-index="4">
+        <h2>📥 PPT 下载流程演示</h2>
+        <p style="opacity: 0.6; margin-bottom: 10px;">真实 API 调用链，从生成到下载</p>
+        <div class="content-grid" style="grid-template-columns: 1.2fr 0.8fr;">
+            <div>
+                <div class="card" style="margin-bottom: 10px;">
+                    <h4>🔹 提交生成请求</h4>
+                    <div class="code-block" style="font-size: 12px;">
+                        POST /api/ppt/generate<br>
+                        { <span class="string">"topic"</span>: <span class="string">"大熊猫保护"</span>, <span class="string">"style"</span>: <span class="string">"简约"</span> }<br>
+                        → { <span class="string">"taskId"</span>: <span class="string">"18523456789"</span>, <span class="string">"status"</span>: <span class="string">"processing"</span> }
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom: 10px;">
+                    <h4>🔹 轮询状态</h4>
+                    <div class="code-block" style="font-size: 12px;">
+                        GET /api/ppt/status?taskId=18523456789<br>
+                        → { <span class="string">"status"</span>: <span class="string">"completed"</span> }
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>🔹 预览内容（新增）</h4>
+                    <div class="code-block" style="font-size: 12px;">
+                        GET /api/ppt/preview/18523456789<br>
+                        → { <span class="string">"totalPage"</span>: 20, <span class="string">"slides"</span>: [...] }
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div style="font-size: 72px; margin-bottom: 14px;">⬇️</div>
+                <div class="demo-download-btn" onclick="alert('🎉 这就是下载按钮的效果！\n实际使用中，点击后会下载 .pptx 文件')" style="cursor: pointer;">
+                    <span class="icon">📥</span> 下载 PPT
+                </div>
+                <p style="font-size: 13px; opacity: 0.5; margin-top: 10px; text-align: center;">
+                    GET /api/ppt/download/:taskId<br>
+                    返回 .pptx 文件流
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第6页: 任务历史与预览 -->
+    <div class="slide theme-accent" data-index="5">
+        <h2>📋 新增接口 — 任务历史 & 预览</h2>
+        <p style="opacity: 0.85; margin-top: 8px;">最新补充的后端接口，让管理更高效</p>
+        <div class="content-grid" style="margin-top: 20px;">
+            <div class="card" style="background: rgba(255,255,255,0.12);">
+                <h4 style="font-size: 18px;">📋 GET /api/ppt/list</h4>
+                <p>列出所有生成任务</p>
+                <div class="code-block" style="font-size: 12px; margin-top: 10px;">
+                    → { <span class="string">"data"</span>: [<br>
+                    &nbsp;&nbsp;{ <span class="string">"taskId"</span>: <span class="string">"1852..."</span>, <span class="string">"topic"</span>: <span class="string">"大熊猫"</span>, <span class="string">"status"</span>: <span class="string">"completed"</span> },<br>
+                    &nbsp;&nbsp;{ <span class="string">"taskId"</span>: <span class="string">"1851..."</span>, <span class="string">"topic"</span>: <span class="string">"AI 趋势"</span>, <span class="string">"status"</span>: <span class="string">"failed"</span> }<br>
+                    ] }
+                </div>
+            </div>
+            <div class="card" style="background: rgba(255,255,255,0.12);">
+                <h4 style="font-size: 18px;">👁️ GET /api/ppt/preview/:taskId</h4>
+                <p>预览 PPT 全部页内容</p>
+                <div class="code-block" style="font-size: 12px; margin-top: 10px;">
+                    → { <span class="string">"totalPage"</span>: 20,<br>
+                    &nbsp;&nbsp;<span class="string">"slides"</span>: [<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;{ <span class="string">"title"</span>: <span class="string">"封面"</span>, <span class="string">"content"</span>: <span class="string">"..."</span> },<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+                    &nbsp;&nbsp;] }
+                </div>
+            </div>
+        </div>
+        <p class="meta" style="color: rgba(255,255,255,0.5);">补充缺失的后端接口，完善管理能力</p>
+    </div>
+
+    <!-- 第7页: 5种风格展示 -->
+    <div class="slide theme-light" data-index="6">
+        <h2>🎨 5 种专业风格</h2>
+        <p style="opacity: 0.6; margin-bottom: 16px;">每种风格独立配色、版式、字体搭配</p>
+        <div class="feature-grid" style="grid-template-columns: repeat(5, 1fr); gap: 12px;">
+            <div class="feature-card" style="background: #f0f4ff; border-color: #d0d8f0;">
+                <div class="f-icon">✨</div>
+                <h4>简约</h4>
+                <p>白底黑字，蓝色强调，干净利落</p>
+            </div>
+            <div class="feature-card" style="background: #f4f7fa; border-color: #b8c8d8;">
+                <div class="f-icon">💼</div>
+                <h4>商务</h4>
+                <p>灰蓝底色，深色标题，专业稳重</p>
+            </div>
+            <div class="feature-card" style="background: #0b101a; color: #d9e2ec; border-color: #2d9cdb;">
+                <div class="f-icon">🚀</div>
+                <h4 style="color: #64d2ff;">科技</h4>
+                <p>深色背景，蓝色高亮，科技感</p>
+            </div>
+            <div class="feature-card" style="background: #fff7ed; border-color: #ea580c;">
+                <div class="f-icon">🎨</div>
+                <h4>创意</h4>
+                <p>暖白底色，橙色强调，活泼鲜明</p>
+            </div>
+            <div class="feature-card" style="background: #f8f9fa; border-color: #902f2f;">
+                <div class="f-icon">📚</div>
+                <h4>学术</h4>
+                <p>白底深蓝标题，红色强调，严谨</p>
+            </div>
+        </div>
+        <p class="meta">风格选择通过 POST /api/ppt/generate 的 style 字段传入</p>
+    </div>
+
+    <!-- 第8页: Token 监控 -->
+    <div class="slide theme-dark" data-index="7">
+        <h2>🪙 Token 消耗监控</h2>
+        <p style="opacity: 0.6; margin-bottom: 14px;">每一分 Token 花费都有记录</p>
+        <div class="content-grid">
+            <div class="card">
+                <h4>📊 监控接口</h4>
+                <div class="code-block" style="font-size: 12px;">
+                    GET /api/monitor/tokens<br>
+                    → { <span class="string">"data"</span>: <span class="string">"总任务数: 5, 总Token消耗: 28450"</span> }
+                </div>
+                <p style="margin-top: 8px; font-size: 14px;">
+                    TokenMonitor 记录每个任务的 prompt/completion tokens<br>
+                    支持按任务 ID 查询明细
+                </p>
+            </div>
+            <div class="card">
+                <h4>📈 模型分配</h4>
+                <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+                    <tr><td style="padding: 4px 0;"><strong>agns-2.0-flash</strong></td><td style="text-align: right;">文案计划</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>agns-image-2.0</strong></td><td style="text-align: right;">配图收集</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>deepseek-v4</strong></td><td style="text-align: right;">预检+终检</td></tr>
+                    <tr><td style="padding: 4px 0;"><strong>python-pptx</strong></td><td style="text-align: right;">文件合成</td></tr>
+                </table>
+                <p style="font-size: 12px; opacity: 0.5; margin-top: 8px;">总计约 5k-15k tokens / 次生成</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第9页: 技术栈详情 -->
+    <div class="slide theme-light" data-index="8">
+        <h2>🔧 技术栈</h2>
+        <p style="opacity: 0.6; margin-bottom: 12px;">Go + Python + AI 三端融合</p>
+        <div class="content-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="card">
+                <h4>🟢 Go 后端</h4>
+                <ul>
+                    <li>Hertz HTTP 框架</li>
+                    <li>Eino AI 编排框架</li>
+                    <li>Wire 依赖注入</li>
+                    <li>Viper 配置管理</li>
+                    <li>Snowflake ID 生成</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>🐍 Python 脚本</h4>
+                <ul>
+                    <li>python-pptx 引擎</li>
+                    <li>5 种风格配色版式</li>
+                    <li>16:9 宽屏布局</li>
+                    <li>封面·目录·内容·图表</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>🤖 AI 模型</h4>
+                <ul>
+                    <li>agnes-2.0-flash</li>
+                    <li>agnes-image-2.0-flash</li>
+                    <li>deepseek-v4-flash</li>
+                    <li>OpenAI 兼容接口</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第10页: Python-pptx 生成 -->
+    <div class="slide theme-accent" data-index="9">
+        <h2>🐍 Python-pptx 生成引擎</h2>
+        <p style="opacity: 0.85;">高质量的 .pptx 文件生成</p>
+        <div class="content-grid" style="margin-top: 16px;">
+            <div class="card" style="background: rgba(255,255,255,0.12);">
+                <h4>📄 生成指令</h4>
+                <div class="code-block" style="font-size: 12px;">
+                    py -3 scripts/generate_ppt.py \<br>
+                    &nbsp;&nbsp;--input slides_temp.json \<br>
+                    &nbsp;&nbsp;--output 大熊猫_2026-06-11_143025.pptx \<br>
+                    &nbsp;&nbsp;--style 简约
+                </div>
+            </div>
+            <div class="card" style="background: rgba(255,255,255,0.12);">
+                <h4>📐 页面布局</h4>
+                <ul>
+                    <li>封面页 — 标题 + 副标题 + 色块</li>
+                    <li>目录页 — 章节列表</li>
+                    <li>内容页 — 双栏要点 + 底线装饰</li>
+                    <li>配图页 — 圆角占位框</li>
+                    <li>图表页 — 圆角容器 + 标记</li>
+                    <li>致谢页 — 总结 + 联系方式</li>
+                </ul>
+            </div>
+        </div>
+        <p class="meta" style="color: rgba(255,255,255,0.5);">文件名格式: 题目_日期_时间.pptx</p>
+    </div>
+
+    <!-- 第11页: 文件结构 -->
+    <div class="slide theme-light" data-index="10">
+        <h2>📁 项目文件结构</h2>
+        <p style="opacity: 0.6; margin-bottom: 12px;">~30 Go 源文件 + 1 Python 脚本 + 前端</p>
+        <div class="content-grid" style="grid-template-columns: 1.2fr 0.8fr;">
+            <div class="code-block" style="font-size: 12px;">
+                .<br>
+                ├── main.go                    <span class="comment">// 入口</span><br>
+                ├── config/<br>
+                │   ├── config.go<br>
+                │   └── config.yml<br>
+                ├── wire/<br>
+                │   ├── wire.go<br>
+                │   └── wire_gen.go<br>
+                ├── biz/<br>
+                │   ├── graph/                <span class="comment">// DAG 工作流</span><br>
+                │   ├── handler/              <span class="comment">// HTTP 处理器</span><br>
+                │   ├── logic/                <span class="comment">// 业务逻辑</span><br>
+                │   ├── model/                <span class="comment">// 数据模型</span><br>
+                │   ├── monitor/              <span class="comment">// Token监控</span><br>
+                │   └── router/               <span class="comment">// 路由注册</span>
+            </div>
+            <div class="code-block" style="font-size: 12px;">
+                ├── frontend/<br>
+                │   ├── index.html            <span class="comment">// 主页面</span><br>
+                │   └── demo.html             <span class="comment">// 演示页面 🆕</span><br>
+                ├── scripts/<br>
+                │   └── generate_ppt.py<br>
+                ├── output/                   <span class="comment">// 生成输出</span><br>
+                └── task/                     <span class="comment">// 任务归档</span>
+            </div>
+        </div>
+        <p class="meta">完整 ~30+ 个 Go 源码文件，依赖注入 Wire 管理</p>
+    </div>
+
+    <!-- 第12页: API 接口全景 -->
+    <div class="slide theme-dark" data-index="11">
+        <h2>🌐 API 接口全景</h2>
+        <p style="opacity: 0.6; margin-bottom: 12px;">所有后端接口一览</p>
+        <div class="card" style="margin-bottom: 10px;">
+            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <th style="padding: 8px 4px; text-align: left;">方法</th>
+                    <th style="padding: 8px 4px; text-align: left;">路径</th>
+                    <th style="padding: 8px 4px; text-align: left;">说明</th>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #a6e3a1;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/ping</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">健康检查</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #89b4fa;">POST</span></td>
+                    <td style="padding: 6px 4px;">/api/ppt/generate</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">生成 PPT</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #a6e3a1;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/ppt/status</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">查询状态</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #a6e3a1;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/ppt/download/:taskId</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">下载 PPT</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #f9e2af;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/ppt/preview/:taskId</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">🆕 预览内容</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 6px 4px;"><span style="color: #f9e2af;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/ppt/list</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">🆕 任务历史</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 4px;"><span style="color: #a6e3a1;">GET</span></td>
+                    <td style="padding: 6px 4px;">/api/monitor/tokens</td>
+                    <td style="padding: 6px 4px; opacity: 0.7;">Token 统计</td>
+                </tr>
+            </table>
+        </div>
+        <p class="meta" style="color: rgba(255,255,255,0.5);">统一响应格式: { code: 0, message: "success", data: {...} }</p>
+    </div>
+
+    <!-- 第13页: 交互体验区的对话 -->
+    <div class="slide theme-green" data-index="12">
+        <h2>💬 交互式体验</h2>
+        <p style="opacity: 0.85; margin-bottom: 10px;">模拟一次完整的 PPT 生成对话</p>
+        <div class="card" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); margin-bottom: 8px;">
+            <div style="display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px;">
+                <span style="background: #667eea; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">👤</span>
+                <div style="flex: 1;">
+                    <strong>你</strong>
+                    <p style="font-size: 15px; margin-top: 2px;">帮我生成一个关于「保护大熊猫」的 PPT，商务风格</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="background: #11998e; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">🤖</span>
+                <div style="flex: 1;">
+                    <strong>AI PPT</strong>
+                    <p style="font-size: 15px; margin-top: 2px;">好的！已收到请求，正在生成 20 页 PPT...</p>
+                    <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
+                        <span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 10px; font-size: 12px;">✅ 文案生成</span>
+                        <span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 10px; font-size: 12px;">⏳ 配图收集</span>
+                        <span style="background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 10px; font-size: 12px;">⏳ 质检</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 16px; margin-top: 6px;">
+            <span style="background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 8px; font-size: 13px;">⏱️ 预计 40 秒</span>
+            <span style="background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 8px; font-size: 13px;">📄 20 页</span>
+            <span style="background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 8px; font-size: 13px;">🎨 商务风格</span>
+        </div>
+    </div>
+
+    <!-- 第14页: 测试清单 -->
+    <div class="slide theme-light" data-index="13">
+        <h2>🧪 测试清单</h2>
+        <p style="opacity: 0.6; margin-bottom: 12px;">确保每个功能都经过验证</p>
+        <div class="content-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="card">
+                <h4>✅ 功能测试</h4>
+                <ul>
+                    <li>POST /api/ppt/generate 正常流程</li>
+                    <li>GET /api/ppt/status 状态流转</li>
+                    <li>GET /api/ppt/download/:taskId 文件下载</li>
+                    <li>GET /api/ppt/preview/:taskId 内容预览</li>
+                    <li>GET /api/ppt/list 任务历史列表</li>
+                    <li>生成文件可正常打开</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>🔧 异常测试</h4>
+                <ul>
+                    <li>空主题、缺失字段</li>
+                    <li>非法 JSON 请求</li>
+                    <li>模型返回异常处理</li>
+                    <li>不存在的 taskId 查询</li>
+                    <li>连续生成 3-5 次稳定性</li>
+                </ul>
+            </div>
+        </div>
+        <p class="meta">使用 /at 命令生成完整测试计划</p>
+    </div>
+
+    <!-- 第15页: 致谢 -->
+    <div class="slide theme-accent" data-index="14">
+        <h2>🙏 感谢观看</h2>
+        <p class="subtitle" style="font-size: 28px; margin-top: 16px;">AI PPT 智能体 — 让演示文稿创作更简单</p>
+        <div style="margin-top: 30px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <a href="/" target="_blank" class="demo-download-btn" style="font-size: 16px; padding: 12px 28px; background: linear-gradient(135deg, #667eea, #764ba2);">
+                ✨ 立即体验
+            </a>
+            <button class="demo-download-btn" style="font-size: 16px; padding: 12px 28px; background: rgba(255,255,255,0.15);" onclick="restartDemo()">
+                🔄 重新演示
+            </button>
+        </div>
+        <p class="meta" style="color: rgba(255,255,255,0.5); margin-top: 24px;">
+            📊 AI 自动生成 · 5种风格 · 一键下载 · 第 15 / 15 页
+        </p>
+    </div>
+</div>
+
+<div class="navigation">
+    <button class="nav-btn prev" id="prevBtn" onclick="prevSlide()">← 上一页</button>
+    <span class="slide-counter" id="slideCounter">1 / 15</span>
+    <button class="nav-btn next" id="nextBtn" onclick="nextSlide()">下一页 →</button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const totalSlides = document.querySelectorAll('.slide').length;
+
+    function updateSlide(index) {
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach((s, i) => {
+            s.classList.remove('active', 'exit');
+            if (i < index) s.classList.add('exit');
+            else if (i === index) s.classList.add('active');
+        });
+        document.getElementById('slideCounter').textContent = (index + 1) + ' / ' + totalSlides;
+        document.getElementById('prevBtn').disabled = index === 0;
+        document.getElementById('nextBtn').disabled = index === totalSlides - 1;
+    }
+
+    function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+            currentSlide++;
+            updateSlide(currentSlide);
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide(currentSlide);
+        }
+    }
+
+    function restartDemo() {
+        currentSlide = 0;
+        updateSlide(0);
+    }
+
+    // 键盘导航
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+            e.preventDefault();
+            nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            prevSlide();
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            restartDemo();
+        }
+    });
+
+    // 触摸滑动
+    let touchStartX = 0;
+    document.getElementById('presentation').addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+    });
+    document.getElementById('presentation').addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) nextSlide();
+            else prevSlide();
+        }
+    });
+
+    // 初始状态
+    updateSlide(0);
+</script>
+</body>
+</html>

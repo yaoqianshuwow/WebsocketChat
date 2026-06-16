@@ -43,23 +43,40 @@ type TextMessageData struct {
 	FileName   string `json:"file_name"`
 }
 
+type TypingMessageData struct {
+	ReceiverId int64 `json:"receiver_id"`
+	ChatType   int32 `json:"chat_type"`
+	SessionId  int64 `json:"session_id"`
+	Typing     bool  `json:"typing"`
+}
+
 type MessageEvent struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`
 }
 
 type MessageEventData struct {
-	SessionId   int64  `json:"sessionId"`
-	SenderId    int64  `json:"senderId"`
-	ReceiverId  int64  `json:"receiverId"`
-	ChatType    int32  `json:"chatType"`
-	MsgType     int32  `json:"msgType"`
-	Content     string `json:"content"`
-	FileUrl     string `json:"fileUrl,omitempty"`
-	FileName    string `json:"fileName,omitempty"`
-	FileSize    int64  `json:"fileSize,omitempty"`
-	SendName    string `json:"sendName,omitempty"`
-	SendAvatar  string `json:"sendAvatar,omitempty"`
+	SessionId  int64  `json:"sessionId"`
+	SenderId   int64  `json:"senderId"`
+	ReceiverId int64  `json:"receiverId"`
+	ChatType   int32  `json:"chatType"`
+	MsgType    int32  `json:"msgType"`
+	Content    string `json:"content"`
+	FileUrl    string `json:"fileUrl,omitempty"`
+	FileName   string `json:"fileName,omitempty"`
+	FileSize   int64  `json:"fileSize,omitempty"`
+	SendName   string `json:"sendName,omitempty"`
+	SendAvatar string `json:"sendAvatar,omitempty"`
+}
+
+type TypingEventData struct {
+	SessionId  int64  `json:"sessionId"`
+	SenderId   int64  `json:"senderId"`
+	ReceiverId int64  `json:"receiverId"`
+	ChatType   int32  `json:"chatType"`
+	Typing     bool   `json:"typing"`
+	SendName   string `json:"sendName,omitempty"`
+	SendAvatar string `json:"sendAvatar,omitempty"`
 }
 
 func WSHandler(w http.ResponseWriter, r *http.Request, serverCtx *svc.ServiceContext) {
@@ -67,7 +84,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request, serverCtx *svc.ServiceCon
 	if token == "" {
 		httpx.OkJson(w, map[string]interface{}{
 			"code":    401,
-			"message": "token 不能为空",
+			"message": "token 涓嶈兘涓虹┖",
 		})
 		return
 	}
@@ -77,7 +94,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request, serverCtx *svc.ServiceCon
 		logx.Errorf("ws auth failed: token=%s err=%v", token[:min(len(token), 10)], err)
 		httpx.OkJson(w, map[string]interface{}{
 			"code":    401,
-			"message": "token 无效",
+			"message": "token 鏃犳晥",
 		})
 		return
 	}
@@ -121,6 +138,37 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 	switch wsMsg.Type {
 	case "heartbeat":
 		return
+	case "typing":
+		var payload TypingMessageData
+		if err := json.Unmarshal(wsMsg.Data, &payload); err != nil {
+			logx.Errorf("ws typing payload error: %v", err)
+			return
+		}
+		if payload.ChatType != 1 {
+			return
+		}
+		if payload.ReceiverId <= 0 {
+			return
+		}
+
+		peerSessionId, err := ensurePeerSession(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
+		if err != nil {
+			logx.Errorf("ensure typing session failed: sender=%d receiver=%d err=%v", uid, payload.ReceiverId, err)
+			return
+		}
+		senderName, senderAvatar := fetchSenderInfo(ctx, serverCtx, uid)
+		_ = hub.SendToUser(payload.ReceiverId, MessageEvent{
+			Type: "typing",
+			Data: TypingEventData{
+				SessionId:  peerSessionId,
+				SenderId:   uid,
+				ReceiverId: payload.ReceiverId,
+				ChatType:   payload.ChatType,
+				Typing:     payload.Typing,
+				SendName:   senderName,
+				SendAvatar: senderAvatar,
+			},
+		})
 	case "text":
 		var payload TextMessageData
 		if err := json.Unmarshal(wsMsg.Data, &payload); err != nil {
@@ -138,36 +186,16 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 			return
 		}
 
-		// 获取发送者信息
+		// Get sender info
 		senderName, senderAvatar := fetchSenderInfo(ctx, serverCtx, uid)
 
 		if payload.ChatType == 1 {
-			// === 单聊：消息存两份（发送方会话 + 接收方会话）===
 			peerSessionId, err := ensurePeerSession(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
 			if err != nil {
 				logx.Errorf("ensure peer session failed: sender=%d receiver=%d err=%v", uid, payload.ReceiverId, err)
 				return
 			}
 
-			// 写发送方会话
-			if _, err := serverCtx.MsgClient.SendMessage(ctx, &msgpb.SendMessageRequest{
-				SenderId:     uid,
-				ReceiverId:   payload.ReceiverId,
-				ChatType:     payload.ChatType,
-				MsgType:      payload.MsgType,
-				Content:      payload.Content,
-				FileUrl:      payload.FileUrl,
-				FileSize:     payload.FileSize,
-				FileName:     payload.FileName,
-				SessionId:    payload.SessionId,
-				SenderName:   senderName,
-				SenderAvatar: senderAvatar,
-			}); err != nil {
-				logx.Errorf("send message failed for sender session: %v", err)
-				return
-			}
-
-			// 写接收方会话（同一内容，不同 session_id）
 			if _, err := serverCtx.MsgClient.SendMessage(ctx, &msgpb.SendMessageRequest{
 				SenderId:     uid,
 				ReceiverId:   payload.ReceiverId,
@@ -182,27 +210,9 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 				SenderAvatar: senderAvatar,
 			}); err != nil {
 				logx.Errorf("send message failed for receiver session: %v", err)
-				// 不 return — 发送方消息已写入，接收方下次拉取消息会同步
+				return
 			}
 
-			// 推送给发送方（用发送方的 sessionId）
-			_ = hub.SendToUser(uid, MessageEvent{
-				Type: "message:new",
-				Data: MessageEventData{
-					SessionId:  payload.SessionId,
-					SenderId:   uid,
-					ReceiverId: payload.ReceiverId,
-					ChatType:   payload.ChatType,
-					MsgType:    payload.MsgType,
-					Content:    payload.Content,
-					FileUrl:    payload.FileUrl,
-					FileName:   payload.FileName,
-					FileSize:   payload.FileSize,
-					SendName:   senderName,
-					SendAvatar: senderAvatar,
-				},
-			})
-			// 推送给接收方（用接收方的 sessionId）
 			_ = hub.SendToUser(payload.ReceiverId, MessageEvent{
 				Type: "message:new",
 				Data: MessageEventData{
@@ -222,7 +232,6 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 			return
 		}
 
-		// === 群聊：消息存一份（群列表 API 用 receiver_id=groupId 查，不按 session）===
 		_, sessionByUser, err := ensureGroupSessions(ctx, serverCtx.FriendClient, uid, payload.ReceiverId)
 		if err != nil {
 			logx.Errorf("ensure group sessions failed: sender=%d group=%d err=%v", uid, payload.ReceiverId, err)
@@ -254,7 +263,7 @@ func handleIncomingMessage(ctx context.Context, serverCtx *svc.ServiceContext, h
 
 		for userId, sessionId := range sessionByUser {
 			if userId == uid {
-				continue // 不发给自己，前端已有本地消息
+				continue // 涓嶅彂缁欒嚜宸憋紝鍓嶇宸叉湁鏈湴娑堟伅
 			}
 			_ = hub.SendToUser(userId, MessageEvent{
 				Type: "message:new",

@@ -39,6 +39,9 @@ func (l *GetMessageListLogic) GetMessageList(in *pb.GetMessageListRequest) (*pb.
 
 	var total int64
 	query.Model(&model.Message{}).Count(&total)
+	if in.BeforeId <= 0 {
+		pageSize = total
+	}
 
 	result := query.Order("id DESC").Limit(int(pageSize)).Find(&messages)
 	if result.Error != nil {

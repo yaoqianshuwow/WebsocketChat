@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '@/api/client';
+import AvatarView from '@/components/AvatarView';
 import { useAuthStore } from '@/store/auth';
-import { pickAvatar } from '@/utils/avatar';
+import { resolveAvatarUrl } from '@/utils/avatar';
+import type { UserInfoResp } from '@/types';
 
 export default function Profile() {
   const { userInfo, loadUserInfo } = useAuthStore();
+  const [searchParams] = useSearchParams();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [viewingUser, setViewingUser] = useState<UserInfoResp | null>(null);
   const [form, setForm] = useState({
     nickname: '',
     avatar: '',
@@ -21,7 +26,29 @@ export default function Profile() {
   }, [loadUserInfo]);
 
   useEffect(() => {
-    if (!userInfo) return;
+    const userIdParam = Number(searchParams.get('userId') || 0);
+    const currentUserId = userInfo?.user_id || 0;
+    if (!userIdParam || userIdParam === currentUserId) {
+      setViewingUser(null);
+      return;
+    }
+
+    void api.getUserInfo(userIdParam).then((resp) => {
+      if (resp.code === 0) {
+        setViewingUser(resp);
+        setForm({
+          nickname: resp.nickname || '',
+          avatar: resp.avatar || '',
+          sex: resp.sex || '',
+          age: resp.age ? String(resp.age) : '',
+          bio: resp.bio || '',
+        });
+      }
+    });
+  }, [searchParams, userInfo?.user_id]);
+
+  useEffect(() => {
+    if (!userInfo || viewingUser) return;
     setForm({
       nickname: userInfo.nickname || '',
       avatar: userInfo.avatar || '',
@@ -29,13 +56,16 @@ export default function Profile() {
       age: userInfo.age ? String(userInfo.age) : '',
       bio: userInfo.bio || '',
     });
-  }, [userInfo]);
+  }, [userInfo, viewingUser]);
+
+  const isSelf = !viewingUser;
 
   const avatarSrc = useMemo(() => {
-    return pickAvatar(userInfo?.user_id || 0, form.avatar || userInfo?.avatar);
-  }, [form.avatar, userInfo?.avatar, userInfo?.user_id]);
+    return resolveAvatarUrl(form.avatar || viewingUser?.avatar || userInfo?.avatar);
+  }, [form.avatar, viewingUser?.avatar, userInfo?.avatar, userInfo?.user_id]);
 
   const handleSave = async () => {
+    if (!isSelf) return;
     setSaving(true);
     try {
       const resp = await api.updateUserInfo({
@@ -55,7 +85,7 @@ export default function Profile() {
   };
 
   const handleAvatarUpload = async (file: File) => {
-    if (!file) return;
+    if (!file || !isSelf) return;
     setUploading(true);
     try {
       const resp = await api.uploadAvatar(file);
@@ -72,36 +102,44 @@ export default function Profile() {
     }
   };
 
+  const showUser = viewingUser || userInfo;
+
   return (
     <div style={styles.wrap}>
       <div style={styles.card}>
         <div style={styles.header}>
           <div>
-            <div style={styles.title}>个人信息</div>
-            <div style={styles.sub}>头像、昵称、性别和简介都在这里维护</div>
+            <div style={styles.title}>{isSelf ? '个人信息' : '用户资料'}</div>
+            <div style={styles.sub}>{isSelf ? '头像、昵称、性别和简介都在这里维护' : '这里只能查看，不可编辑'}</div>
           </div>
           <div style={styles.avatarBox}>
-            <img src={avatarSrc} alt="avatar" style={styles.avatar} />
-            <button type="button" style={styles.avatarBtn} onClick={() => fileRef.current?.click()} disabled={uploading}>
-              {uploading ? '上传中' : '更换头像'}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleAvatarUpload(file);
-              }}
-            />
+            <AvatarView src={avatarSrc} alt="avatar" size={96} radius={24} style={styles.avatar} />
+            {isSelf ? (
+              <>
+                <button type="button" style={styles.avatarBtn} onClick={() => fileRef.current?.click()} disabled={uploading}>
+                  {uploading ? '上传中' : '更换头像'}
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleAvatarUpload(file);
+                  }}
+                />
+              </>
+            ) : (
+              <div style={{ ...styles.avatarBtn, display: 'grid', placeItems: 'center', cursor: 'default' }}>他人资料</div>
+            )}
           </div>
         </div>
 
         <div style={styles.grid}>
           <label style={styles.field}>
             <span style={styles.label}>用户名</span>
-            <input style={styles.input} value={userInfo?.username || ''} readOnly />
+            <input style={styles.input} value={showUser?.username || ''} readOnly />
           </label>
           <label style={styles.field}>
             <span style={styles.label}>昵称</span>
@@ -110,6 +148,7 @@ export default function Profile() {
               value={form.nickname}
               onChange={(e) => setForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="请输入昵称"
+              disabled={!isSelf}
             />
           </label>
           <label style={styles.field}>
@@ -119,6 +158,7 @@ export default function Profile() {
               value={form.sex}
               onChange={(e) => setForm((prev) => ({ ...prev, sex: e.target.value }))}
               placeholder="例如：男 / 女 / 保密"
+              disabled={!isSelf}
             />
           </label>
           <label style={styles.field}>
@@ -129,6 +169,7 @@ export default function Profile() {
               onChange={(e) => setForm((prev) => ({ ...prev, age: e.target.value }))}
               placeholder="请输入年龄"
               inputMode="numeric"
+              disabled={!isSelf}
             />
           </label>
         </div>
@@ -140,19 +181,22 @@ export default function Profile() {
             value={form.bio}
             onChange={(e) => setForm((prev) => ({ ...prev, bio: e.target.value }))}
             placeholder="写点个人介绍吧"
+            disabled={!isSelf}
           />
         </label>
 
         <div style={styles.meta}>
-          <span>状态：{userInfo?.status === 0 ? '在线' : '离线'}</span>
-          <span>角色：{userInfo?.role === 1 ? '管理员' : '普通用户'}</span>
-          <span>ID：{userInfo?.user_id || 0}</span>
+          <span>状态：{(showUser?.status ?? 0) === 0 ? '在线' : '离线'}</span>
+          <span>角色：{(showUser?.role ?? 0) === 1 ? '管理员' : '普通用户'}</span>
+          <span>ID：{showUser?.user_id || 0}</span>
         </div>
 
         <div style={styles.actions}>
-          <button type="button" style={styles.primaryBtn} onClick={handleSave} disabled={saving}>
-            {saving ? '保存中' : '保存修改'}
-          </button>
+          {isSelf && (
+            <button type="button" style={styles.primaryBtn} onClick={handleSave} disabled={saving}>
+              {saving ? '保存中' : '保存修改'}
+            </button>
+          )}
         </div>
       </div>
     </div>

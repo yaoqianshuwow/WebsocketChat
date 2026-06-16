@@ -72,7 +72,10 @@ function New-WebContext {
   Ensure-CleanDir $contextDir
   New-Item -ItemType Directory -Force -Path $contextBin | Out-Null
   Copy-Item -Path (Join-Path $binRoot 'web-server') -Destination (Join-Path $contextBin 'web-server')
-  Copy-Item -Path (Join-Path $root 'web/dist/*') -Destination $contextDist -Recurse
+  New-Item -ItemType Directory -Force -Path $contextDist | Out-Null
+  Get-ChildItem -Path (Join-Path $root 'web/dist') -Force | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $contextDist -Recurse -Force
+  }
   return $contextDir
 }
 
@@ -128,6 +131,7 @@ try {
     @{ Name = 'wschat-voice:latest'; Dockerfile = 'deploy/Dockerfile.release-go'; Context = New-GoContext -Name 'voice' -BinaryName 'voice' -ConfigFile 'deploy/docker-config/voice.yaml' },
     @{ Name = 'wschat-msg-forward:latest'; Dockerfile = 'deploy/Dockerfile.release-go'; Context = New-GoContext -Name 'msg-forward' -BinaryName 'msg-forward' -ConfigFile 'deploy/docker-config/msg.yaml' },
     @{ Name = 'wschat-msg-store:latest'; Dockerfile = 'deploy/Dockerfile.release-go'; Context = New-GoContext -Name 'msg-store' -BinaryName 'msg-store' -ConfigFile 'deploy/docker-config/msg-store.yaml' },
+    @{ Name = 'wschat-ppt-agent:latest'; Dockerfile = 'deploy/Dockerfile.ppt-agent'; Context = $root },
     @{ Name = 'wschat-web:latest'; Dockerfile = 'deploy/Dockerfile.release-web'; Context = New-WebContext }
   )
 
@@ -148,7 +152,10 @@ try {
   if (Test-Path $webDist) {
     Remove-Item $webDist -Recurse -Force
   }
-  Copy-Item -Path (Join-Path $root 'web/dist/*') -Destination $webDist -Recurse
+  New-Item -ItemType Directory -Force -Path $webDist | Out-Null
+  Get-ChildItem -Path (Join-Path $root 'web/dist') -Force | ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $webDist -Recurse -Force
+  }
 
   $releaseConfigDir = Join-Path $releaseRoot 'config'
   Ensure-CleanDir $releaseConfigDir
@@ -156,6 +163,7 @@ try {
   (Get-Content (Join-Path $releaseConfigDir 'file.yaml') -Raw).Replace('__SERVER_IP__', $ServerIp) | Set-Content -Path (Join-Path $releaseConfigDir 'file.yaml') -Encoding utf8
 
   Copy-Item -Path (Join-Path $root 'deploy/docker-compose.release.yml') -Destination (Join-Path $releaseRoot 'docker-compose.release.yml') -Force
+  Copy-Item -Path (Join-Path $root 'deploy/nginx-web.conf') -Destination (Join-Path $releaseRoot 'nginx-web.conf') -Force
 
   Write-Host "Done. Release directory: $releaseRoot"
 } finally {

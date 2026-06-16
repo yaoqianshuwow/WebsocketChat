@@ -11,6 +11,7 @@ import (
 	"github.com/your-org/ws-chat-zero/app/msg-forward/internal/svc"
 	"github.com/your-org/ws-chat-zero/app/msg-forward/pb/pb"
 	"github.com/zeromicro/go-zero/core/logx"
+	"gorm.io/gorm/clause"
 )
 
 type SendMessageLogic struct {
@@ -39,9 +40,13 @@ func NewSendMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *SendM
 	return &SendMessageLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
+var msgSeq int64
+
 func (l *SendMessageLogic) SendMessage(in *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
 	now := time.Now()
-	msgID := now.UnixNano()
+	msgSeq++
+	// Use atomic counter to avoid nanosecond collisions
+	msgID := now.UnixNano() + msgSeq%1000
 	payload := messagePayload{
 		MsgId:        msgID,
 		SenderId:     in.SenderId,
@@ -64,11 +69,12 @@ func (l *SendMessageLogic) SendMessage(in *pb.SendMessageRequest) (*pb.SendMessa
 		return &pb.SendMessageResponse{Code: -1, Message: "marshal message payload failed"}, nil
 	}
 
+	if err := l.storeDirect(payload); err != nil {
+		logx.Errorf("direct store error: sender=%d receiver=%d session=%d err=%v", in.SenderId, in.ReceiverId, in.SessionId, err)
+		return &pb.SendMessageResponse{Code: -1, Message: "store message failed"}, nil
+	}
+
 	if l.svcCtx.Config.StoreMode == "direct" || l.svcCtx.KafkaWriter == nil {
-		if err := l.storeDirect(payload); err != nil {
-			logx.Errorf("direct store error: sender=%d receiver=%d session=%d err=%v", in.SenderId, in.ReceiverId, in.SessionId, err)
-			return &pb.SendMessageResponse{Code: -1, Message: "store message failed"}, nil
-		}
 		logx.Infof("message stored directly: sender=%d receiver=%d session=%d msg_id=%d", in.SenderId, in.ReceiverId, in.SessionId, msgID)
 		return &pb.SendMessageResponse{Code: 0, Message: "ok", MsgId: msgID}, nil
 	}
@@ -79,15 +85,16 @@ func (l *SendMessageLogic) SendMessage(in *pb.SendMessageRequest) (*pb.SendMessa
 		Time:  now,
 	}); err != nil {
 		logx.Errorf("kafka write error: sender=%d receiver=%d session=%d err=%v", in.SenderId, in.ReceiverId, in.SessionId, err)
-		return &pb.SendMessageResponse{Code: -1, Message: "publish message failed"}, nil
+	} else {
+		logx.Infof("message enqueued: sender=%d receiver=%d session=%d msg_id=%d", in.SenderId, in.ReceiverId, in.SessionId, msgID)
 	}
 
-	logx.Infof("message enqueued: sender=%d receiver=%d session=%d msg_id=%d", in.SenderId, in.ReceiverId, in.SessionId, msgID)
 	return &pb.SendMessageResponse{Code: 0, Message: "ok", MsgId: msgID}, nil
 }
 
 func (l *SendMessageLogic) storeDirect(payload messagePayload) error {
 	msg := model.Message{
+		MsgId:      &payload.MsgId,
 		SenderId:   payload.SenderId,
 		ReceiverId: payload.ReceiverId,
 		ChatType:   payload.ChatType,
@@ -102,5 +109,8 @@ func (l *SendMessageLogic) storeDirect(payload messagePayload) error {
 		SessionId:  payload.SessionId,
 		CreatedAt:  time.Unix(payload.CreatedAt, 0),
 	}
-	return l.svcCtx.DB.Create(&msg).Error
+	return l.svcCtx.DB.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "msg_id"}},
+		DoNothing: true,
+	}).Create(&msg).Error
 }

@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+﻿import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/api/client';
+import AvatarView from '@/components/AvatarView';
 import { useChatStore } from '@/store/chat';
 import { useMobile } from '@/hooks/useMobile';
-import { pickAvatar } from '@/utils/avatar';
-import type { ApplyVo, ContactVo, UserInfoResp } from '@/types';
+import { resolveAvatarUrl } from '@/utils/avatar';
+import type { ApplyVo, ContactVo } from '@/types';
 
-type TabKey = 'list' | 'search';
+type TabKey = 'list';
 
 function safeText(value: string | undefined, fallback: string) {
   if (!value) return fallback;
@@ -23,8 +24,6 @@ export default function Contacts() {
   const navigate = useNavigate();
   const isMobile = useMobile();
   const [applyList, setApplyList] = useState<ApplyVo[]>([]);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState<UserInfoResp[]>([]);
   const [tab, setTab] = useState<TabKey>('list');
   const [applyOpen, setApplyOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -75,18 +74,6 @@ export default function Contacts() {
     alert(resp.message);
     if (resp.code === 0) {
       await refresh();
-    }
-  };
-
-  const handleSearch = async () => {
-    if (!searchKeyword.trim()) return;
-    const resp = await api.searchUsers(searchKeyword.trim());
-    if (resp.code === 0) {
-      setSearchResults(resp.data || []);
-      setTab('search');
-      setQuickOpen(false);
-    } else {
-      alert(resp.message);
     }
   };
 
@@ -167,7 +154,7 @@ export default function Contacts() {
                 type="button"
                 style={styles.quickItem}
                 onClick={() => {
-                  setTab('search');
+                  navigate('/contacts/search');
                   setApplyOpen(false);
                   setQuickOpen(false);
                 }}
@@ -192,17 +179,16 @@ export default function Contacts() {
             {applyList.length === 0 && <div style={styles.emptyMini}>暂无新的好友申请</div>}
             {applyList.map((item) => {
               const name = displayName(item.nickname, `用户 ${item.fromId}`);
-              const avatarSrc = pickAvatar(item.fromId, undefined);
               return (
                 <div key={item.applyId} style={styles.applyItem}>
-                  <img
-                    src={avatarSrc}
-                    alt={name}
-                    style={styles.avatarImg}
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = pickAvatar(item.fromId + 1);
-                    }}
-                  />
+                  <button
+                    type="button"
+                    style={styles.avatarButton}
+                    onClick={() => navigate(`/profile?userId=${item.fromId}`)}
+                    title="查看个人详情"
+                  >
+                    <AvatarView src={resolveAvatarUrl(item.avatar)} alt={name} size={36} radius={8} style={styles.avatarImg} />
+                  </button>
                   <div style={styles.itemInfo}>
                     <div style={styles.itemName}>{name}</div>
                     <div style={styles.itemStatus}>{safeText(item.remark, '好友申请')}</div>
@@ -233,20 +219,18 @@ export default function Contacts() {
             {contacts.length === 0 && <div style={styles.empty}>暂无联系人</div>}
             {contacts.map((contact) => {
               const name = displayName(contact.nickname, '好友');
-              const avatarSrc = pickAvatar(contact.contactId, contact.avatar);
               return (
                 <div key={contact.contactId} style={{ ...styles.item, ...(isMobile ? mStyles.item : {}) }}>
                   <div
                     style={{ ...styles.itemBody, ...(isMobile ? mStyles.itemBody : {}) }}
                     onClick={() => openChat(contact.contactId, contact.nickname)}
                   >
-                    <img
-                      src={avatarSrc}
+                    <AvatarView
+                      src={resolveAvatarUrl(contact.avatar)}
                       alt={name}
+                      size={isMobile ? 32 : 36}
+                      radius={8}
                       style={{ ...styles.avatarImg, ...(isMobile ? mStyles.avatarImg : {}) }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = pickAvatar(contact.contactId + 1);
-                      }}
                     />
                     <div style={styles.itemInfo}>
                       <div style={{ ...styles.itemName, ...(isMobile ? mStyles.itemName : {}) }}>{name}</div>
@@ -287,53 +271,6 @@ export default function Contacts() {
                       删除
                     </button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {tab === 'search' && (
-          <div>
-            <div style={styles.searchBar}>
-              <input
-                style={styles.searchInput}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                placeholder="搜索用户名或昵称"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              <button type="button" style={styles.searchBtn} onClick={handleSearch}>
-                搜索
-              </button>
-            </div>
-            {searchResults.length === 0 && <div style={styles.empty}>请输入关键词后搜索</div>}
-            {searchResults.map((user) => {
-              const name = displayName(user.nickname || user.username, `用户 ${user.user_id}`);
-              const avatarSrc = pickAvatar(user.user_id, user.avatar);
-              return (
-                <div key={user.user_id} style={{ ...styles.item, ...(isMobile ? mStyles.item : {}) }}>
-                  <div style={{ ...styles.itemBody, ...(isMobile ? mStyles.itemBody : {}) }}>
-                    <img
-                      src={avatarSrc}
-                      alt={name}
-                      style={{ ...styles.avatarImg, ...(isMobile ? mStyles.avatarImg : {}) }}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = pickAvatar((user.user_id || 0) + 1);
-                      }}
-                    />
-                    <div style={styles.itemInfo}>
-                      <div style={{ ...styles.itemName, ...(isMobile ? mStyles.itemName : {}) }}>{name}</div>
-                      <div style={styles.itemStatus}>{safeText(user.bio, '暂无签名')}</div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    style={{ ...styles.addBtn, ...(isMobile ? mStyles.addBtn : {}) }}
-                    onClick={() => user.user_id && handleApply(user.user_id)}
-                  >
-                    添加好友
-                  </button>
                 </div>
               );
             })}
@@ -547,6 +484,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid #f0f0f0',
     background: '#fff',
   },
+  avatarButton: { border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', flexShrink: 0 },
   content: { flex: 1, overflow: 'auto', padding: 8 },
   item: {
     display: 'flex',

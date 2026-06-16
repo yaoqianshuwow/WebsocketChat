@@ -3,8 +3,10 @@ FROM golang:1.26-alpine AS builder
 RUN apk add --no-cache build-base
 
 WORKDIR /build
-COPY app/gateway/ ./
-RUN GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 go build -o /gateway .
+COPY go.work go.work.sum ./
+COPY app/ ./app/
+COPY pkg/ ./pkg/
+RUN GOPROXY=https://goproxy.cn,direct CGO_ENABLED=0 go build -o /gateway ./app/gateway
 
 # 阶段 2：运行
 FROM alpine:3.20

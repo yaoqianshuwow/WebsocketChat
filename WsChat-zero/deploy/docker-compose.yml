@@ -82,6 +82,19 @@ services:
     networks:
       - wschat-net
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: wschat-jaeger
+    restart: always
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - wschat-net
+
   # ── 业务子服务 ──
   user-rpc:
     build:
@@ -183,6 +196,20 @@ services:
     networks:
       - wschat-net
 
+  ppt-agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.ppt-agent
+    container_name: wschat-ppt-agent
+    restart: always
+    ports:
+      - "8123:8123"
+    volumes:
+      - ppt-output:/app/output
+      - ppt-storage:/app/storage
+    networks:
+      - wschat-net
+
   gateway:
     build:
       context: ..
@@ -220,6 +247,8 @@ volumes:
   es-data:
   file-storage:
   etcd-data:
+  ppt-output:
+  ppt-storage:
 
 networks:
   wschat-net:

@@ -77,7 +77,20 @@ func ViewFileHandlerWithAuth(w http.ResponseWriter, r *http.Request, svcCtx *svc
 		return
 	}
 
-	resp, err := svcCtx.FileClient.GetFile(r.Context(), &filepb.GetFileRequest{FileUrl: fileUrl})
+	// Try multiple URL formats to match DB records
+	candidates := []string{
+		strings.ReplaceAll(fileUrl, "127.0.0.1", "__SERVER_IP__"),
+		strings.ReplaceAll(fileUrl, "localhost", "__SERVER_IP__"),
+		fileUrl,
+	}
+	var resp *filepb.GetFileResponse
+	var err error
+	for _, url := range candidates {
+		resp, err = svcCtx.FileClient.GetFile(r.Context(), &filepb.GetFileRequest{FileUrl: url})
+		if err == nil && resp.Code == 0 {
+			break
+		}
+	}
 	if err != nil || resp.Code != 0 {
 		msg := "文件不存在"
 		if err != nil {

@@ -6,8 +6,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/config"
+	Ai "github.com/your-org/ws-chat-zero/app/gateway/internal/handler/Ai"
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/handler"
 	"github.com/your-org/ws-chat-zero/app/gateway/internal/svc"
 
@@ -28,6 +30,20 @@ func main() {
 
 	ctx := svc.NewServiceContext(c)
 	handler.RegisterHandlers(server, ctx)
+
+	// AI chat (auth required)
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{ctx.Auth},
+			[]rest.Route{
+				{
+					Method:  http.MethodPost,
+					Path:    "/api/v1/ai/chat",
+					Handler: Ai.AiChatHandler(ctx),
+				},
+			}...,
+		),
+	)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()

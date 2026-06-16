@@ -95,11 +95,11 @@ type WSMessage struct {
 // ── 全局状态 ──
 
 var (
-	u1, u2        *LoginResp
-	u1SessionID   int64
-	u2SessionID   int64
-	groupID       int64
-	testResults   []string
+	u1, u2      *LoginResp
+	u1SessionID int64
+	u2SessionID int64
+	groupID     int64
+	testResults []string
 )
 
 func main() {
@@ -194,20 +194,11 @@ func testSingleChat() {
 // ── 群聊测试 ──
 
 func createGroupAndAddMember() {
-	var searchResp GroupSearchResp
-	apiPost("/api/v1/group/searchGroupList", map[string]any{"keyword": "auto-test-group"}, u1.Token, &searchResp)
-	for _, g := range searchResp.Data {
-		if g.Name == "auto-test-group" {
-			groupID = g.GroupID
-			break
-		}
-	}
-	if groupID == 0 {
-		var createResp GroupCreateResp
-		apiPost("/api/v1/group/createGroup", map[string]any{"groupName": "auto-test-group"}, u1.Token, &createResp)
-		must(createResp.Code == 0 && createResp.GroupID > 0, "创建群组失败: %s", createResp.Message)
-		groupID = createResp.GroupID
-	}
+	groupName := fmt.Sprintf("auto-test-group-%d", time.Now().UnixNano())
+	var createResp GroupCreateResp
+	apiPost("/api/v1/group/createGroup", map[string]any{"groupName": groupName}, u1.Token, &createResp)
+	must(createResp.Code == 0 && createResp.GroupID > 0, "创建群组失败: %s", createResp.Message)
+	groupID = createResp.GroupID
 
 	var memberListResp struct {
 		Code int32 `json:"code"`
@@ -232,7 +223,7 @@ func createGroupAndAddMember() {
 		// 已在群组中也算成功
 		must(joinResp.Code == 0 || joinResp.Code == 1, "u2 加群失败: code=%d msg=%s", joinResp.Code, joinResp.Message)
 	}
-	pass("群组已就绪: groupId=%d, u1=%d, u2=%d", groupID, u1.UserID, u2.UserID)
+	pass("群组已就绪: groupId=%d, name=%s, u1=%d, u2=%d", groupID, groupName, u1.UserID, u2.UserID)
 }
 
 func testGroupChat() {

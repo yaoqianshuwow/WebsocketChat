@@ -30,6 +30,7 @@ const (
 	FriendService_GetSessionList_FullMethodName     = "/friend.FriendService/GetSessionList"
 	FriendService_DeleteSession_FullMethodName      = "/friend.FriendService/DeleteSession"
 	FriendService_CreateGroup_FullMethodName        = "/friend.FriendService/CreateGroup"
+	FriendService_JoinGroup_FullMethodName          = "/friend.FriendService/JoinGroup"
 	FriendService_GetGroupInfo_FullMethodName       = "/friend.FriendService/GetGroupInfo"
 	FriendService_GetGroupInfoList_FullMethodName   = "/friend.FriendService/GetGroupInfoList"
 	FriendService_UpdateGroupInfo_FullMethodName    = "/friend.FriendService/UpdateGroupInfo"
@@ -58,6 +59,7 @@ type FriendServiceClient interface {
 	GetSessionList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*SessionListResponse, error)
 	DeleteSession(ctx context.Context, in *DeleteSessionRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error)
+	JoinGroup(ctx context.Context, in *DismissGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	GetGroupInfo(ctx context.Context, in *GetGroupInfoRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error)
 	GetGroupInfoList(ctx context.Context, in *GetContactListRequest, opts ...grpc.CallOption) (*GroupListResponse, error)
 	UpdateGroupInfo(ctx context.Context, in *UpdateGroupInfoRequest, opts ...grpc.CallOption) (*CommonResponse, error)
@@ -187,6 +189,16 @@ func (c *friendServiceClient) CreateGroup(ctx context.Context, in *CreateGroupRe
 	return out, nil
 }
 
+func (c *friendServiceClient) JoinGroup(ctx context.Context, in *DismissGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CommonResponse)
+	err := c.cc.Invoke(ctx, FriendService_JoinGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *friendServiceClient) GetGroupInfo(ctx context.Context, in *GetGroupInfoRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GroupInfoResponse)
@@ -294,6 +306,7 @@ type FriendServiceServer interface {
 	GetSessionList(context.Context, *GetSessionListRequest) (*SessionListResponse, error)
 	DeleteSession(context.Context, *DeleteSessionRequest) (*CommonResponse, error)
 	CreateGroup(context.Context, *CreateGroupRequest) (*GroupInfoResponse, error)
+	JoinGroup(context.Context, *DismissGroupRequest) (*CommonResponse, error)
 	GetGroupInfo(context.Context, *GetGroupInfoRequest) (*GroupInfoResponse, error)
 	GetGroupInfoList(context.Context, *GetContactListRequest) (*GroupListResponse, error)
 	UpdateGroupInfo(context.Context, *UpdateGroupInfoRequest) (*CommonResponse, error)
@@ -345,6 +358,9 @@ func (UnimplementedFriendServiceServer) DeleteSession(context.Context, *DeleteSe
 }
 func (UnimplementedFriendServiceServer) CreateGroup(context.Context, *CreateGroupRequest) (*GroupInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateGroup not implemented")
+}
+func (UnimplementedFriendServiceServer) JoinGroup(context.Context, *DismissGroupRequest) (*CommonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method JoinGroup not implemented")
 }
 func (UnimplementedFriendServiceServer) GetGroupInfo(context.Context, *GetGroupInfoRequest) (*GroupInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupInfo not implemented")
@@ -592,6 +608,24 @@ func _FriendService_CreateGroup_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FriendService_JoinGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DismissGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FriendServiceServer).JoinGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FriendService_JoinGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FriendServiceServer).JoinGroup(ctx, req.(*DismissGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _FriendService_GetGroupInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGroupInfoRequest)
 	if err := dec(in); err != nil {
@@ -804,6 +838,10 @@ var FriendService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateGroup",
 			Handler:    _FriendService_CreateGroup_Handler,
+		},
+		{
+			MethodName: "JoinGroup",
+			Handler:    _FriendService_JoinGroup_Handler,
 		},
 		{
 			MethodName: "GetGroupInfo",

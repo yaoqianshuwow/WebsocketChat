@@ -23,6 +23,7 @@ type (
 	ContactInfoResponse       = pb.ContactInfoResponse
 	ContactListResponse       = pb.ContactListResponse
 	CreateGroupRequest        = pb.CreateGroupRequest
+	JoinGroupRequest          = pb.DismissGroupRequest
 	CreateSessionRequest      = pb.CreateSessionRequest
 	DeleteContactRequest      = pb.DeleteContactRequest
 	DeleteGroupsRequest       = pb.DeleteGroupsRequest
@@ -59,6 +60,7 @@ type (
 		GetSessionList(ctx context.Context, in *GetSessionListRequest, opts ...grpc.CallOption) (*SessionListResponse, error)
 		DeleteSession(ctx context.Context, in *DeleteSessionRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 		CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error)
+		JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 		GetGroupInfo(ctx context.Context, in *GetGroupInfoRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error)
 		GetGroupInfoList(ctx context.Context, in *GetContactListRequest, opts ...grpc.CallOption) (*GroupListResponse, error)
 		UpdateGroupInfo(ctx context.Context, in *UpdateGroupInfoRequest, opts ...grpc.CallOption) (*CommonResponse, error)
@@ -134,6 +136,11 @@ func (m *defaultFriendService) DeleteSession(ctx context.Context, in *DeleteSess
 func (m *defaultFriendService) CreateGroup(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error) {
 	client := pb.NewFriendServiceClient(m.cli.Conn())
 	return client.CreateGroup(ctx, in, opts...)
+}
+
+func (m *defaultFriendService) JoinGroup(ctx context.Context, in *JoinGroupRequest, opts ...grpc.CallOption) (*CommonResponse, error) {
+	client := pb.NewFriendServiceClient(m.cli.Conn())
+	return client.JoinGroup(ctx, in, opts...)
 }
 
 func (m *defaultFriendService) GetGroupInfo(ctx context.Context, in *GetGroupInfoRequest, opts ...grpc.CallOption) (*GroupInfoResponse, error) {

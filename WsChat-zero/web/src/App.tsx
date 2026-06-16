@@ -8,8 +8,12 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Chat from '@/pages/Chat';
 import Contacts from '@/pages/Contacts';
+import ContactSearch from '@/pages/ContactSearch';
 import Groups from '@/pages/Groups';
+import GroupSearch from '@/pages/GroupSearch';
+import PptAssistant from '@/pages/PptAssistant';
 import Profile from '@/pages/Profile';
+import MessageSearch from '@/pages/MessageSearch';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -21,7 +25,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { init, token } = useAuthStore();
-  const { loadSessions, loadMessages, currentSession } = useChatStore();
 
   useEffect(() => {
     init();
@@ -36,18 +39,33 @@ export default function App() {
 
   useEffect(() => {
     const handleMessage = (msg: { data?: { sessionId?: number } }) => {
-      void loadSessions();
-      const sessionId = Number(msg?.data?.sessionId || 0);
-      if (sessionId > 0 && currentSession?.sessionId === sessionId) {
-        void loadMessages(sessionId);
-      }
+      const state = useChatStore.getState();
+      state.loadSessions();
+      state.syncIncomingMessage(msg?.data || {});
+    };
+
+    const handleTyping = (msg: { data?: { sessionId?: number; typing?: boolean } }) => {
+      const state = useChatStore.getState();
+      const data = msg?.data || {};
+      state.setPeerTyping(data.sessionId || null, Boolean(data.typing));
     };
 
     wsClient.on('message:new', handleMessage);
+    wsClient.on('typing', handleTyping);
     return () => {
       wsClient.off('message:new', handleMessage);
+      wsClient.off('typing', handleTyping);
     };
-  }, [currentSession, loadMessages, loadSessions]);
+  }, []);
+
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      useAuthStore.getState().logout();
+      window.location.replace('/login');
+    };
+    window.addEventListener('wschat-auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('wschat-auth-expired', handleAuthExpired);
+  }, []);
 
   return (
     <BrowserRouter>
@@ -63,7 +81,11 @@ export default function App() {
         >
           <Route path="/chat" element={<Chat />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/contacts/search" element={<ContactSearch />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/search" element={<GroupSearch />} />
+          <Route path="/messages/search" element={<MessageSearch />} />
+          <Route path="/ppt-assistant" element={<PptAssistant />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/chat" replace />} />

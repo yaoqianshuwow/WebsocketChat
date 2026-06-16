@@ -30,6 +30,13 @@ func (l *GetRecentMessagesLogic) GetRecentMessages(in *pb.GetRecentMessagesReque
 		limit = 50
 	}
 
+	var total int64
+	if err := l.svcCtx.DB.Model(&model.Message{}).
+		Where("session_id = ? AND status = 0", in.SessionId).
+		Count(&total).Error; err != nil {
+		return &pb.MessageListResponse{Code: 1, Message: "鏌ヨ澶辫触"}, nil
+	}
+
 	var messages []model.Message
 	result := l.svcCtx.DB.Where("session_id = ? AND status = 0", in.SessionId).
 		Order("id DESC").
@@ -48,6 +55,6 @@ func (l *GetRecentMessagesLogic) GetRecentMessages(in *pb.GetRecentMessagesReque
 		Code:    0,
 		Message: "ok",
 		Data:    data,
-		Total:   0,
+		Total:   total,
 	}, nil
 }

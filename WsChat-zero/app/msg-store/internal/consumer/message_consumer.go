@@ -44,7 +44,7 @@ func StartMessageConsumer(ctx *svc.ServiceContext) {
 		MinBytes:    10,
 		MaxBytes:    10e6,
 		MaxWait:     1 * time.Second,
-		StartOffset: kafka.FirstOffset,
+		StartOffset: kafka.LastOffset,
 	})
 	defer reader.Close()
 
@@ -124,7 +124,15 @@ func ensureTopic(brokers []string, topic string) error {
 }
 
 func storeToMySQL(ctx *svc.ServiceContext, payload *MessagePayload) error {
+	// Dedup check
+	var existing int64
+	ctx.DB.Model(&model.Message{}).Where("msg_id = ?", payload.MsgId).Count(&existing)
+	if existing > 0 {
+		return nil // already stored
+	}
+
 	msg := model.Message{
+		MsgId:      &payload.MsgId,
 		SenderId:   payload.SenderId,
 		ReceiverId: payload.ReceiverId,
 		ChatType:   payload.ChatType,
@@ -143,6 +151,26 @@ func storeToMySQL(ctx *svc.ServiceContext, payload *MessagePayload) error {
 		return fmt.Errorf("MySQL insert failed: %w", err)
 	}
 	logx.Infof("message saved to MySQL: msg_id=%d, table_id=%d", payload.MsgId, msg.Id)
+
+	// 更新未读计数
+	if payload.ChatType == 1 {
+		// 单聊：更新接收方会话
+		if err := ctx.DB.Exec(
+			"UPDATE `session` SET unread_count = unread_count + 1 WHERE user_id = ? AND peer_id = ? AND session_type = 1",
+			payload.ReceiverId, payload.SenderId,
+		).Error; err != nil {
+			logx.Errorf("update single unread count failed: session user=%d peer=%d err=%v", payload.ReceiverId, payload.SenderId, err)
+		}
+	} else if payload.ChatType == 2 {
+		// 群聊：更新除发送者外的所有群成员未读计数
+		if err := ctx.DB.Exec(
+			"UPDATE `group_member` SET unread_count = unread_count + 1 WHERE group_id = ? AND user_id != ?",
+			payload.ReceiverId, payload.SenderId,
+		).Error; err != nil {
+			logx.Errorf("update group unread count failed: group=%d sender=%d err=%v", payload.ReceiverId, payload.SenderId, err)
+		}
+	}
+
 	return nil
 }
 

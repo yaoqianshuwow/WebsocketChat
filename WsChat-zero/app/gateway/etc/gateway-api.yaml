@@ -31,10 +31,12 @@ Redis:
 JwtAuth:
   AccessSecret: ws-chat-zero-secret-key-2026
 Mysql:
-  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local&tls=false
 
 Telemetry:
   Name: gateway-api
   Batcher: otlpgrpc
   Endpoint: localhost:4317
   Sampler: 1.0
+
+PptAgentURL: http://127.0.0.1:8123

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -22,6 +23,12 @@ type singleLoginResp struct {
 	Token    string `json:"token"`
 	UserID   int64  `json:"user_id"`
 	Nickname string `json:"nickname"`
+}
+
+type singleRegisterResp struct {
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
+	UserID  int64  `json:"user_id"`
 }
 
 type singleSessionsResp struct {
@@ -54,11 +61,12 @@ type singleWSMessage struct {
 }
 
 func main() {
-	u1 := singleLogin("u1", "111111")
-	u2 := singleLogin("u2", "111111")
+	tag := fmt.Sprintf("%d-%d", time.Now().UnixNano(), os.Getpid())
+	u1 := singleEnsureAccount("u1-"+tag, "111111")
+	u2 := singleEnsureAccount("u2-"+tag, "111111")
 
-	u1Session := singleEnsureSession(u1.Token, u2.UserID, "u2")
-	u2Session := singleEnsureSession(u2.Token, u1.UserID, "u1")
+	u1Session := singleEnsureSession(u1.Token, u2.UserID, u2.Nickname)
+	u2Session := singleEnsureSession(u2.Token, u1.UserID, u1.Nickname)
 
 	u1Conn := singleConnectWS(u1.Token)
 	defer u1Conn.Close()
@@ -68,9 +76,8 @@ func main() {
 	before1 := len(singleGetMessageList(u1.Token, u1Session))
 	before2 := len(singleGetMessageList(u2.Token, u2Session))
 
-	tag := fmt.Sprintf("single-%d", time.Now().UnixNano())
-	msg1 := "u1->u2 " + tag
-	msg2 := "u2->u1 " + tag
+	msg1 := "u1->u2 single-" + tag
+	msg2 := "u2->u1 single-" + tag
 
 	singleSend(u1Conn, u2.UserID, u1Session, msg1)
 	ev1 := singleReadMessage(u2Conn)
@@ -89,6 +96,19 @@ func main() {
 	must(ev2 != nil && ev2.Content == msg2, "u1 没有实时收到 u2 消息")
 
 	fmt.Println("单聊校验通过")
+}
+
+func singleEnsureAccount(user, pass string) *singleLoginResp {
+	var regResp singleRegisterResp
+	singlePost("/api/v1/register", map[string]any{
+		"username": user,
+		"password": pass,
+		"nickname": user,
+	}, "", &regResp)
+	if regResp.Code != 0 && regResp.Message != "用户名已存在" {
+		panic("注册失败: " + regResp.Message)
+	}
+	return singleLogin(user, pass)
 }
 
 func singleLogin(user, pass string) *singleLoginResp {

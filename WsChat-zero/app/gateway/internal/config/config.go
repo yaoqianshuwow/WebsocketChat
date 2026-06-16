@@ -7,17 +7,13 @@ import (
 
 type Config struct {
 	rest.RestConf
-	UserRpc   RpcConf
-	MsgRpc    RpcConf
-	FriendRpc RpcConf
-	FileRpc   RpcConf
-	Redis     RedisConf
-	JwtAuth   JwtAuthConf
-	Mysql     MysqlConf
-}
-
-type MysqlConf struct {
-	DataSource string
+	UserRpc     RpcConf
+	MsgRpc      RpcConf
+	FriendRpc   RpcConf
+	FileRpc     RpcConf
+	Redis       RedisConf
+	JwtAuth     JwtAuthConf
+	PptAgentURL string `json:",optional"`
 }
 
 type RpcConf struct {

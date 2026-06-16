@@ -8,7 +8,7 @@ Etcd:
   Key: file.rpc
 
 Mysql:
-  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local
+  DataSource: root:111111@tcp(localhost:3306)/wechat_database?charset=utf8mb4&parseTime=True&loc=Local&tls=false
 
 FileConfig:
   StoragePath: ./storage/files

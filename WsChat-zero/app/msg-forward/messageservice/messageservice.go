@@ -14,14 +14,16 @@ import (
 )
 
 type (
-	GetGroupMessageListRequest = pb.GetGroupMessageListRequest
-	GetMessageListRequest      = pb.GetMessageListRequest
-	GetRecentMessagesRequest   = pb.GetRecentMessagesRequest
-	Message                    = pb.Message
-	MessageListResponse        = pb.MessageListResponse
-	SearchMessagesRequest      = pb.SearchMessagesRequest
-	SendMessageRequest         = pb.SendMessageRequest
-	SendMessageResponse        = pb.SendMessageResponse
+	GetGroupMessageListRequest    = pb.GetGroupMessageListRequest
+	GetMessageListRequest         = pb.GetMessageListRequest
+	GetRecentMessagesRequest      = pb.GetRecentMessagesRequest
+	Message                       = pb.Message
+	MessageListResponse           = pb.MessageListResponse
+	SearchMessagesRequest         = pb.SearchMessagesRequest
+	SendMessageRequest            = pb.SendMessageRequest
+	SendMessageResponse           = pb.SendMessageResponse
+	DeleteSessionMessagesRequest  = pb.GetRecentMessagesRequest
+	DeleteSessionMessagesResponse = pb.SendMessageResponse
 
 	MessageService interface {
 		SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
@@ -29,6 +31,7 @@ type (
 		GetGroupMessageList(ctx context.Context, in *GetGroupMessageListRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
 		GetRecentMessages(ctx context.Context, in *GetRecentMessagesRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
 		SearchMessages(ctx context.Context, in *SearchMessagesRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
+		DeleteSessionMessages(ctx context.Context, in *DeleteSessionMessagesRequest, opts ...grpc.CallOption) (*DeleteSessionMessagesResponse, error)
 	}
 
 	defaultMessageService struct {
@@ -65,4 +68,9 @@ func (m *defaultMessageService) GetRecentMessages(ctx context.Context, in *GetRe
 func (m *defaultMessageService) SearchMessages(ctx context.Context, in *SearchMessagesRequest, opts ...grpc.CallOption) (*MessageListResponse, error) {
 	client := pb.NewMessageServiceClient(m.cli.Conn())
 	return client.SearchMessages(ctx, in, opts...)
+}
+
+func (m *defaultMessageService) DeleteSessionMessages(ctx context.Context, in *DeleteSessionMessagesRequest, opts ...grpc.CallOption) (*DeleteSessionMessagesResponse, error) {
+	client := pb.NewMessageServiceClient(m.cli.Conn())
+	return client.DeleteSessionMessages(ctx, in, opts...)
 }

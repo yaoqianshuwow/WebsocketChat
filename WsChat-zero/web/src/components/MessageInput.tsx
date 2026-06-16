@@ -6,47 +6,86 @@ import { useMobile } from '@/hooks/useMobile';
 import wsClient from '@/ws/client';
 import type { MessageVo } from '@/types';
 
+const EMOJIS = ['😀', '😂', '😭', '🥹', '😎', '❤️'];
+const TYPING_IDLE_MS = 3000;
+
 export default function MessageInput() {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingSentRef = useRef(false);
   const { currentSession, addMessage, markMessageStatus, wsState } = useChatStore();
   const { user, userInfo } = useAuthStore();
   const isMobile = useMobile();
 
   const userId = user?.userId ?? user?.user_id ?? userInfo?.user_id ?? 0;
+  const session = currentSession;
 
-  // 手机端输入框聚焦时，将输入区域滚到可视区
   useEffect(() => {
-    if (!isMobile || !currentSession) return;
+    if (!isMobile || !session) return;
     const handleFocus = () => {
       setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 300);
     };
     const el = inputRef.current;
-    if (el) {
-      el.addEventListener('focus', handleFocus);
-      return () => el.removeEventListener('focus', handleFocus);
-    }
-  }, [currentSession, isMobile]);
+    el?.addEventListener('focus', handleFocus);
+    return () => el?.removeEventListener('focus', handleFocus);
+  }, [session, isMobile]);
 
-  if (!currentSession) {
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    };
+  }, []);
+
+  const stopTyping = () => {
+    const activeSession = session!;
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+    if (typingSentRef.current) {
+      wsClient.sendTyping(activeSession.peerId, activeSession.sessionType, activeSession.sessionId, false);
+      typingSentRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopTyping();
+    };
+  }, [session?.sessionId]);
+
+  if (!session) {
     return null;
   }
+
+  const scheduleTyping = () => {
+    wsClient.sendTyping(session.peerId, session.sessionType, session.sessionId, true);
+    typingSentRef.current = true;
+
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+    }
+    typingTimerRef.current = setTimeout(() => {
+      stopTyping();
+    }, TYPING_IDLE_MS);
+  };
 
   const sendText = () => {
     const content = text.trim();
     if (!content) return;
 
+    stopTyping();
+
     const localId = `local-${Date.now()}`;
     const localMessage: MessageVo = {
       localId,
       senderId: userId,
-      receiverId: currentSession.peerId,
+      receiverId: session.peerId,
       msgType: 1,
       content,
       createdAt: Math.floor(Date.now() / 1000),
@@ -55,7 +94,7 @@ export default function MessageInput() {
     };
 
     addMessage(localMessage);
-    const sent = wsClient.sendMessage(content, currentSession.peerId, currentSession.sessionType, currentSession.sessionId);
+    const sent = wsClient.sendMessage(content, session.peerId, session.sessionType, session.sessionId);
     markMessageStatus(localId, sent ? 'sent' : 'failed');
     setText('');
   };
@@ -82,11 +121,13 @@ export default function MessageInput() {
         return;
       }
 
+      stopTyping();
+
       const localId = `local-${Date.now()}`;
       const localMessage: MessageVo = {
         localId,
         senderId: userId,
-        receiverId: currentSession.peerId,
+        receiverId: session.peerId,
         msgType: 2,
         content: '',
         fileUrl: resp.fileUrl,
@@ -100,9 +141,9 @@ export default function MessageInput() {
 
       const sent = wsClient.sendMessage(
         '',
-        currentSession.peerId,
-        currentSession.sessionType,
-        currentSession.sessionId,
+        session.peerId,
+        session.sessionType,
+        session.sessionId,
         2,
         {
           fileUrl: resp.fileUrl,
@@ -117,22 +158,38 @@ export default function MessageInput() {
     }
   };
 
+  const insertEmoji = (emoji: string) => {
+    setText((prev) => `${prev}${emoji}`);
+    setTimeout(scheduleTyping, 0);
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.toolbar}>
-        <button type="button" style={styles.toolBtn} onClick={() => fileRef.current?.click()}>
-          附件
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void handleUpload(file);
-          }}
-        />
-        <div style={styles.hint}>{busy ? '正在上传' : wsState === 'connected' ? '连接正常，可直接发送' : wsState === 'reconnecting' ? '连接波动，正在重连' : '等待连接建立'}</div>
+        <div style={styles.toolbarLeft}>
+          <button type="button" style={styles.toolBtn} onClick={() => fileRef.current?.click()}>
+            附件
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleUpload(file);
+            }}
+          />
+          <div style={styles.emojiBar}>
+            {EMOJIS.map((emoji) => (
+              <button key={emoji} type="button" style={styles.emojiBtn} onClick={() => insertEmoji(emoji)} title={`发送 ${emoji}`}>
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={styles.hint}>
+          {busy ? '正在上传' : wsState === 'connected' ? '连接正常，可以直接发送' : wsState === 'reconnecting' ? '连接波动，正在重连' : '等待连接建立'}
+        </div>
       </div>
 
       <div style={styles.editor}>
@@ -140,8 +197,18 @@ export default function MessageInput() {
           ref={inputRef}
           style={{ ...styles.input, ...(isMobile ? styles.inputMobile : {}) }}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setText(value);
+            if (value.trim()) {
+              if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+              scheduleTyping();
+            } else {
+              stopTyping();
+            }
+          }}
           onKeyDown={handleKeyDown}
+          onBlur={stopTyping}
           placeholder="输入消息，Enter 发送，Shift + Enter 换行"
           rows={isMobile ? 2 : 3}
         />
@@ -160,9 +227,9 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.96)',
     display: 'grid',
     gap: 10,
-    // 手机端固定在底部
   },
   toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  toolbarLeft: { display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   toolBtn: {
     height: 34,
     padding: '0 12px',
@@ -170,8 +237,20 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #dbe7fb',
     background: '#f7fbff',
     color: '#4a90d9',
+    cursor: 'pointer',
   },
-  hint: { fontSize: 12, color: '#999' },
+  emojiBar: { display: 'flex', gap: 6, flexWrap: 'wrap' },
+  emojiBtn: {
+    minWidth: 34,
+    height: 34,
+    padding: '0 8px',
+    borderRadius: 10,
+    border: '1px solid #e5ebf7',
+    background: '#fff',
+    cursor: 'pointer',
+    fontSize: 16,
+  },
+  hint: { fontSize: 12, color: '#999', textAlign: 'right' },
   editor: { display: 'flex', alignItems: 'flex-end', gap: 10 },
   input: {
     flex: 1,
@@ -184,11 +263,12 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#f8fbff',
     color: '#333',
     lineHeight: 1.6,
+    outline: 'none',
   },
   inputMobile: {
     minHeight: 56,
     maxHeight: 100,
-    fontSize: 16, // iOS 防止键盘缩放
+    fontSize: 16,
   },
   sendBtn: {
     minWidth: 88,
@@ -199,5 +279,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
     fontWeight: 700,
     background: '#4a90d9',
+    cursor: 'pointer',
   },
 };

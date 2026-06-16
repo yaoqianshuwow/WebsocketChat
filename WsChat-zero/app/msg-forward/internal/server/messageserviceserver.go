@@ -47,3 +47,8 @@ func (s *MessageServiceServer) SearchMessages(ctx context.Context, in *pb.Search
 	l := logic.NewSearchMessagesLogic(ctx, s.svcCtx)
 	return l.SearchMessages(in)
 }
+
+func (s *MessageServiceServer) DeleteSessionMessages(ctx context.Context, in *pb.GetRecentMessagesRequest) (*pb.SendMessageResponse, error) {
+	l := logic.NewDeleteSessionMessagesLogic(ctx, s.svcCtx)
+	return l.DeleteSessionMessages(in)
+}

@@ -78,6 +78,11 @@ func (s *FriendServiceServer) CreateGroup(ctx context.Context, in *pb.CreateGrou
 	return l.CreateGroup(in)
 }
 
+func (s *FriendServiceServer) JoinGroup(ctx context.Context, in *pb.DismissGroupRequest) (*pb.CommonResponse, error) {
+	l := logic.NewJoinGroupLogic(ctx, s.svcCtx)
+	return l.JoinGroup(in)
+}
+
 func (s *FriendServiceServer) GetGroupInfo(ctx context.Context, in *pb.GetGroupInfoRequest) (*pb.GroupInfoResponse, error) {
 	l := logic.NewGetGroupInfoLogic(ctx, s.svcCtx)
 	return l.GetGroupInfo(in)

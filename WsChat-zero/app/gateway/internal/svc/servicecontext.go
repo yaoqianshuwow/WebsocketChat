@@ -9,8 +9,6 @@ import (
 	userpb "github.com/your-org/ws-chat-zero/app/user/userservice"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/zrpc"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 type ServiceContext struct {
@@ -20,7 +18,6 @@ type ServiceContext struct {
 	MsgClient    msgpb.MessageService
 	FriendClient friendpb.FriendService
 	FileClient   filepb.FileService
-	DB           *gorm.DB
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -29,18 +26,12 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	friendCli := friendpb.NewFriendService(zrpc.MustNewClient(buildClientConf(c.FriendRpc)))
 	fileCli := filepb.NewFileService(zrpc.MustNewClient(buildClientConf(c.FileRpc)))
 
-	db, err := gorm.Open(mysql.Open(c.Mysql.DataSource), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
-
 	ctx := &ServiceContext{
 		Config:       c,
 		UserClient:   userCli,
 		MsgClient:    msgCli,
 		FriendClient: friendCli,
 		FileClient:   fileCli,
-		DB:           db,
 	}
 	ctx.Auth = middleware.NewAuthMiddleware(userCli).Handle
 	return ctx

@@ -1,36 +1,40 @@
-const AVATAR_POOL = ['/fallback-avatar.jpg', '/fallback-avatar-2.jpg'];
-
-function stableIndex(seed: number | string | undefined) {
-  if (seed === undefined || seed === null) return 0;
-  const text = String(seed);
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-  }
-  return hash % AVATAR_POOL.length;
+function isBrowser() {
+  return typeof window !== 'undefined';
 }
 
 function getToken(): string {
+  if (!isBrowser()) return '';
   return localStorage.getItem('token') || '';
 }
 
-function wrapFileUrl(url: string): string {
-  if (url && url.includes('/files/')) {
-    const token = getToken();
-    if (token) {
-      // Use same origin as API client (gateway port)
-      const base = import.meta.env.VITE_API_BASE_URL as string || '';
-      const apiOrigin = base ? base.replace(/\/api\/v1$/, '') : window.location.origin;
-      return `${apiOrigin}/api/v1/message/viewFile?fileUrl=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`;
-    }
+function normalizePlaceholder(url: string) {
+  if (!url) return url;
+  if (/__server_ip__/i.test(url)) {
+    const hostname = isBrowser() ? window.location.hostname || '127.0.0.1' : '127.0.0.1';
+    return url.replace(/__server_ip__/ig, hostname);
   }
   return url;
 }
 
-export function pickAvatar(seed: number | string | undefined, avatar?: string) {
-  if (avatar && !avatar.includes('�')) {
-    return wrapFileUrl(avatar);
+function proxyThroughGateway(url: string): string {
+  const normalized = normalizePlaceholder(url);
+  if (!normalized) return normalized;
+  // Only proxy URLs that go to the file service
+  if (normalized.includes('/files/')) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL as string || '';
+    const apiOrigin = baseUrl ? baseUrl.replace(/\/api\/v1$/, '') : window.location.origin;
+    const token = getToken();
+    if (token) {
+      return `${apiOrigin}/api/v1/message/viewFile?fileUrl=${encodeURIComponent(normalized)}&token=${encodeURIComponent(token)}`;
+    }
+    return `${apiOrigin}/api/v1/message/viewFile?fileUrl=${encodeURIComponent(normalized)}`;
   }
-  return AVATAR_POOL[stableIndex(seed)];
+  return normalized;
 }
 
+export function resolveAvatarUrl(avatar?: string) {
+  if (!avatar || avatar.includes('�')) {
+    return '';
+  }
+  return proxyThroughGateway(avatar);
+}

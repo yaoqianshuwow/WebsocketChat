@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import AvatarView from '@/components/AvatarView';
 import { useAuthStore } from '@/store/auth';
 import { useChatStore } from '@/store/chat';
 import { useMobile } from '@/hooks/useMobile';
+import { resolveAvatarUrl } from '@/utils/avatar';
 
 const navItems = [
   { path: '/chat', label: '聊天' },
@@ -93,11 +95,13 @@ export default function Layout() {
 
             <div style={styles.userArea} onClick={(e) => e.stopPropagation()}>
               <div style={styles.userChip}>
-                {userInfo?.avatar ? (
-                  <img src={userInfo.avatar} alt="" style={{ width: 34, height: 34, borderRadius: 999, objectFit: 'cover', background: '#fff', display: 'block' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                ) : (
-                  <div style={styles.avatar}>{(userInfo?.nickname || userInfo?.username || 'U').charAt(0)}</div>
-                )}
+                <AvatarView
+                  src={resolveAvatarUrl(userInfo?.avatar)}
+                  alt={userInfo?.nickname || userInfo?.username || '用户'}
+                  size={34}
+                  radius={999}
+                  style={styles.avatar}
+                />
                 <div style={styles.userMeta}>
                   <div style={styles.userName}>{userInfo?.nickname || userInfo?.username || '用户'}</div>
                   <div style={styles.userDesc}>在线</div>

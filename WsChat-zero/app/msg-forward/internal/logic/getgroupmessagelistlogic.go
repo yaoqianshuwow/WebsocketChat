@@ -39,6 +39,9 @@ func (l *GetGroupMessageListLogic) GetGroupMessageList(in *pb.GetGroupMessageLis
 
 	var total int64
 	query.Model(&model.Message{}).Count(&total)
+	if in.BeforeId <= 0 {
+		pageSize = total
+	}
 
 	result := query.Order("id DESC").Limit(int(pageSize)).Find(&messages)
 	if result.Error != nil {

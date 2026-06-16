@@ -1,6 +1,8 @@
 package svc
 
 import (
+	"time"
+
 	"github.com/segmentio/kafka-go"
 	"github.com/your-org/ws-chat-zero/app/msg-forward/internal/config"
 	"github.com/your-org/ws-chat-zero/app/msg-forward/internal/model"
@@ -15,10 +17,7 @@ type ServiceContext struct {
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	db, err := gorm.Open(mysql.Open(c.Mysql.DataSource), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
+	db := openDBWithRetry(c.Mysql.DataSource)
 
 	_ = db.AutoMigrate(&model.Message{})
 
@@ -36,4 +35,28 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		DB:          db,
 		KafkaWriter: writer,
 	}
+}
+
+func openDBWithRetry(dsn string) *gorm.DB {
+	var (
+		db  *gorm.DB
+		err error
+	)
+
+	for i := 0; i < 30; i++ {
+		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		if err == nil {
+			sqlDB, pingErr := db.DB()
+			if pingErr == nil {
+				pingErr = sqlDB.Ping()
+			}
+			if pingErr == nil {
+				return db
+			}
+			err = pingErr
+		}
+		time.Sleep(time.Second)
+	}
+
+	panic(err)
 }

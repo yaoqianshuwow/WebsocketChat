@@ -19,4 +19,6 @@ WsChat-zero/app/*/*.exe
 
 # 归档文件
 WsChat-zero/release/*.tar
-*.tar.gz
+*.tar.gz|
+*.txt
+WsChat-zero/.gocache

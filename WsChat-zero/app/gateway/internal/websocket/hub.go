@@ -2,23 +2,24 @@ package websocket
 
 import (
 	"encoding/json"
+	"sync"
+
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
-	"sync"
 )
 
-// Client 代表一个 WebSocket 连接
+// Client represents a single websocket connection.
 type Client struct {
-	UserId   int64
-	Conn     *websocket.Conn
-	Send     chan []byte
-	Hub      *Hub
+	UserId int64
+	Conn   *websocket.Conn
+	Send   chan []byte
+	Hub    *Hub
 }
 
-// Hub 管理所有 WebSocket 连接
+// Hub keeps the latest websocket connection for each user.
 type Hub struct {
 	mu       sync.RWMutex
-	clients  map[int64]*Client  // userId -> Client
+	clients  map[int64]*Client
 	register chan *Client
 	unregister chan *Client
 }
@@ -46,38 +47,37 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			h.mu.Lock()
 			h.clients[client.UserId] = client
+			total := len(h.clients)
 			h.mu.Unlock()
-			logx.Infof("ws client registered: userId=%d, total=%d", client.UserId, len(h.clients))
-
+			logx.Infof("ws client registered: userId=%d, total=%d", client.UserId, total)
 		case client := <-h.unregister:
 			h.mu.Lock()
 			if current, ok := h.clients[client.UserId]; ok && current == client {
 				delete(h.clients, client.UserId)
 				close(client.Send)
 			}
+			total := len(h.clients)
 			h.mu.Unlock()
-			logx.Infof("ws client unregistered: userId=%d, total=%d", client.UserId, len(h.clients))
+			logx.Infof("ws client unregistered: userId=%d, total=%d", client.UserId, total)
 		}
 	}
 }
 
-// Register 注册客户端
 func (h *Hub) Register(client *Client) {
 	h.register <- client
 }
 
-// Unregister 注销客户端
 func (h *Hub) Unregister(client *Client) {
 	h.unregister <- client
 }
 
-// SendToUser 向指定用户发送消息
 func (h *Hub) SendToUser(userId int64, data interface{}) error {
 	h.mu.RLock()
 	client, ok := h.clients[userId]
 	h.mu.RUnlock()
 	if !ok {
-		return nil // 用户不在线
+		logx.Infof("ws send skipped: userId=%d offline", userId)
+		return nil
 	}
 
 	msg, err := json.Marshal(data)
@@ -87,20 +87,19 @@ func (h *Hub) SendToUser(userId int64, data interface{}) error {
 
 	select {
 	case client.Send <- msg:
+		logx.Infof("ws send queued: userId=%d bytes=%d", userId, len(msg))
 	default:
 		logx.Errorf("ws send buffer full: userId=%d", userId)
 	}
 	return nil
 }
 
-// BroadcastToUsers 向多个用户广播消息
 func (h *Hub) BroadcastToUsers(userIds []int64, data interface{}) {
 	for _, uid := range userIds {
 		_ = h.SendToUser(uid, data)
 	}
 }
 
-// IsOnline 检查用户是否在线
 func (h *Hub) IsOnline(userId int64) bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -108,7 +107,6 @@ func (h *Hub) IsOnline(userId int64) bool {
 	return ok
 }
 
-// OnlineCount 获取在线人数
 func (h *Hub) OnlineCount() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

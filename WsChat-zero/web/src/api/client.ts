@@ -5,6 +5,11 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL
 class ApiClient {
   private token: string | null = null;
 
+  private handleAuthExpired() {
+    this.setToken(null);
+    window.dispatchEvent(new Event('wschat-auth-expired'));
+  }
+
   setToken(token: string | null) {
     this.token = token;
     if (token) {
@@ -40,7 +45,11 @@ class ApiClient {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
-    return res.json();
+    const data = await res.json();
+    if (data && typeof data === 'object' && 'code' in data && (data as { code?: number }).code === 401) {
+      this.handleAuthExpired();
+    }
+    return data as T;
   }
 
   private async upload<T>(path: string, file: File, fieldName = 'file', extra?: Record<string, string>) {
@@ -63,7 +72,11 @@ class ApiClient {
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
-    return res.json() as Promise<T>;
+    const data = await res.json();
+    if (data && typeof data === 'object' && 'code' in data && (data as { code?: number }).code === 401) {
+      this.handleAuthExpired();
+    }
+    return data as T;
   }
 
   // ── 认证 ──
@@ -135,12 +148,20 @@ class ApiClient {
   }
 
   // ── 消息 ──
-  getMessageList(sessionId: number, page = 1, size = 20) {
-    return this.request<import('../types').MessageListResp>('/message/getMessageList', { sessionId, page, size });
+  getMessageList(sessionId: number, beforeId = 0, size = 20) {
+    return this.request<import('../types').MessageListResp>('/message/getMessageList', { sessionId, beforeId, size });
   }
 
-  getGroupMessageList(groupId: number, page = 1, size = 20) {
-    return this.request<import('../types').MessageListResp>('/message/getGroupMessageList', { groupId, page, size });
+  getGroupMessageList(groupId: number, beforeId = 0, size = 20) {
+    return this.request<import('../types').MessageListResp>('/message/getGroupMessageList', { groupId, beforeId, size });
+  }
+
+  searchMessages(data: import('../types').SearchMessagesReq) {
+    return this.request<import('../types').MessageListResp>('/message/searchMessages', data);
+  }
+
+  getRecentMessages(sessionId: number, limit = 20) {
+    return this.request<import('../types').MessageListResp>('/message/getRecentMessages', { sessionId, limit });
   }
 
   // ── 群组 ──

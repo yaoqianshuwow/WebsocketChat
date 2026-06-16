@@ -1,0 +1,25 @@
+server:
+  port: 8123
+  context-path: /
+  config-active: local
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  username: root
+  password: ""
+  dbname: ppt_agent
+
+ai:
+  text-model:
+    base-url: https://api.deepseek.com
+    api-key: ""
+    model-name: deepseek-v4-flash
+  agent-model:
+    base-url: https://apihub.agnes-ai.com/v1
+    api-key: ""
+    model-name: agnes-2.0-flash
+  image-model:
+    base-url: https://apihub.agnes-ai.com/v1
+    api-key: ""
+    model-name: agnes-image-2.0-flash

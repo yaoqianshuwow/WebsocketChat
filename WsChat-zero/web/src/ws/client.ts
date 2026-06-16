@@ -145,6 +145,23 @@ class WsClient {
     });
   }
 
+  sendTyping(
+    receiverId: number,
+    chatType: number,
+    sessionId: number,
+    typing: boolean,
+  ) {
+    return this.send({
+      type: 'typing',
+      data: {
+        receiver_id: receiverId,
+        chat_type: chatType,
+        session_id: sessionId,
+        typing,
+      },
+    });
+  }
+
   private dispatch(msg: WsMessage) {
     const handlers = this.handlers.get(msg.type) || [];
     handlers.forEach((h) => h(msg));

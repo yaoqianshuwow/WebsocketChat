@@ -35,6 +35,7 @@ func main() {
 func testSingleChat(adminToken, u1Token string) {
 	// Ensure session
 	openSession(adminToken, 2, 1, "u1")
+	sessionID := ensureSessionID(adminToken, 2, 1)
 
 	adminConn := connectWS(adminToken)
 	defer adminConn.Close()
@@ -46,8 +47,8 @@ func testSingleChat(adminToken, u1Token string) {
 	tag := fmt.Sprintf("single-%d", time.Now().UnixNano())
 	msg1 := "admin->u1 " + tag
 
-	// Send from admin to u1 (single chat, session 2, chatType 1)
-	sendWS(adminConn, 2, 2, 1, msg1)
+	// Send from admin to u1 (single chat)
+	sendWS(adminConn, 2, sessionID, 1, msg1)
 	ev1 := readWS(u1Conn, 5)
 	if ev1 != nil && ev1.Content == msg1 {
 		fmt.Println("✅ u1 received single message:", ev1.Content)
@@ -59,7 +60,7 @@ func testSingleChat(adminToken, u1Token string) {
 
 	time.Sleep(1 * time.Second)
 	// Verify in history
-	list := getMessageList(adminToken, 2)
+	list := getMessageList(adminToken, sessionID)
 	found := false
 	for _, m := range list {
 		if m.Content == msg1 {
@@ -72,6 +73,26 @@ func testSingleChat(adminToken, u1Token string) {
 	} else {
 		fmt.Println("❌ Message NOT in history")
 	}
+}
+
+func ensureSessionID(token string, peerID int64, sessionType int32) int64 {
+	var resp struct {
+		Code int32 `json:"code"`
+		Data []struct {
+			SessionID   int64 `json:"sessionId"`
+			PeerID      int64 `json:"peerId"`
+			SessionType int32 `json:"sessionType"`
+		} `json:"data"`
+	}
+	postJSON("/api/v1/session/getUserSessionList", map[string]any{"sessionType": 0}, token, &resp)
+	for _, item := range resp.Data {
+		if item.SessionType == sessionType && item.PeerID == peerID {
+			return item.SessionID
+		}
+	}
+	fmt.Printf("Session not found for peer=%d type=%d\n", peerID, sessionType)
+	os.Exit(1)
+	return 0
 }
 
 func testGroupChat(adminToken, u1Token string) {

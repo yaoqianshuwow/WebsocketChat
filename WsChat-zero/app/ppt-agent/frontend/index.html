@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI PPT — 对话生成</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .page1-container {
+            width: 100%;
+            max-width: 780px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 56px;
+            margin-bottom: 8px;
+        }
+        .title {
+            font-size: 42px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 40px;
+        }
+        .input-area {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 8px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .input-area:focus-within {
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.1);
+        }
+        .input-area textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 16px;
+            padding: 14px 18px;
+            font-family: inherit;
+            resize: none;
+            min-height: 28px;
+            max-height: 160px;
+            line-height: 1.5;
+        }
+        .input-area textarea::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .hints {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        .hint-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .hint-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.8);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .features {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 48px;
+            color: rgba(255,255,255,0.3);
+            font-size: 13px;
+        }
+        .features span { display: flex; align-items: center; gap: 6px; }
+        .recent-questions {
+            margin-top: 22px;
+            display: grid;
+            gap: 10px;
+        }
+        .recent-questions .title {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            text-align: center;
+        }
+        .recent-questions .items {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .recent-questions .item {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.72);
+            cursor: pointer;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+<div class="page1-container">
+    <div class="logo">📊</div>
+    <div class="title">AI PPT</div>
+    <div class="subtitle">输入主题，AI 自动生成专业演示文稿</div>
+
+    <div class="input-area">
+        <textarea id="promptInput" rows="1"
+            placeholder="输入 PPT 主题，例如：保护大熊猫、人工智能趋势、年度总结..."
+            oninput="autoResize(this)" maxlength="500"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendPrompt()">➤</button>
+    </div>
+
+    <div class="hints">
+        <div class="hint-btn" onclick="fillPrompt('帮我做一份关于人工智能发展趋势的 PPT，科技风格')">🤖 AI 趋势</div>
+        <div class="hint-btn" onclick="fillPrompt('生成一份大熊猫保护的 PPT，简约风格')">🐼 大熊猫</div>
+        <div class="hint-btn" onclick="fillPrompt('帮我做一份年度总结 PPT，商务风格')">📈 年度总结</div>
+        <div class="hint-btn" onclick="fillPrompt('生成一份量子计算科普的 PPT，创意风格')">⚛️ 量子计算</div>
+    </div>
+
+    <div class="recent-questions">
+        <div class="title">最近保存的问卷</div>
+        <div class="items" id="recentQuestions"></div>
+    </div>
+
+    <div class="features">
+        <span>🎨 5 种风格</span>
+        <span>🤖 AI 自动生成</span>
+        <span>📥 一键下载</span>
+    </div>
+</div>
+
+<script>
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+    }
+
+    function fillPrompt(text) {
+        document.getElementById('promptInput').value = text;
+        autoResize(document.getElementById('promptInput'));
+        document.getElementById('promptInput').focus();
+    }
+
+    async function saveQuestion(content) {
+        try {
+            await fetch('/api/question/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: 'workspace', content })
+            });
+        } catch (err) {
+            console.warn('save question failed', err);
+        }
+    }
+
+    async function loadRecentQuestions() {
+        try {
+            const res = await fetch('/api/question/list?sessionId=workspace');
+            const data = await res.json();
+            if (data.code !== 0 || !data.data) return;
+
+            const container = document.getElementById('recentQuestions');
+            const rawItems = data.data.questions ?? data.data;
+            const items = Array.isArray(rawItems) ? rawItems.slice(0, 6) : [];
+            container.innerHTML = '';
+
+            if (!items.length) {
+                container.innerHTML = '<span style="color: rgba(255,255,255,0.32); font-size: 13px;">暂无记录</span>';
+                return;
+            }
+
+            items.forEach((item) => {
+                const el = document.createElement('div');
+                el.className = 'item';
+                el.textContent = item.content || '';
+                el.onclick = () => fillPrompt(item.content || '');
+                container.appendChild(el);
+            });
+        } catch (err) {
+            console.warn('load recent questions failed', err);
+        }
+    }
+
+    async function sendPrompt() {
+        const input = document.getElementById('promptInput');
+        const text = input.value.trim();
+        if (!text) { input.focus(); return; }
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳';
+
+        // 存储到 localStorage，跳转到工作台
+        localStorage.setItem('ppt_prompt', text);
+        await saveQuestion(text);
+        window.location.href = '/workspace';
+    }
+
+    // 回车发送（Shift+Enter 换行）
+    document.getElementById('promptInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendPrompt();
+        }
+    });
+
+    // 自动聚焦
+    document.getElementById('promptInput').focus();
+    loadRecentQuestions();
+</script>
+</body>
+</html>

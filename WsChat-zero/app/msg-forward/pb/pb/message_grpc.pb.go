@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageService_SendMessage_FullMethodName         = "/msg.MessageService/SendMessage"
-	MessageService_GetMessageList_FullMethodName      = "/msg.MessageService/GetMessageList"
-	MessageService_GetGroupMessageList_FullMethodName = "/msg.MessageService/GetGroupMessageList"
-	MessageService_GetRecentMessages_FullMethodName   = "/msg.MessageService/GetRecentMessages"
-	MessageService_SearchMessages_FullMethodName      = "/msg.MessageService/SearchMessages"
+	MessageService_SendMessage_FullMethodName           = "/msg.MessageService/SendMessage"
+	MessageService_GetMessageList_FullMethodName        = "/msg.MessageService/GetMessageList"
+	MessageService_GetGroupMessageList_FullMethodName   = "/msg.MessageService/GetGroupMessageList"
+	MessageService_GetRecentMessages_FullMethodName     = "/msg.MessageService/GetRecentMessages"
+	MessageService_SearchMessages_FullMethodName        = "/msg.MessageService/SearchMessages"
+	MessageService_DeleteSessionMessages_FullMethodName = "/msg.MessageService/DeleteSessionMessages"
 )
 
 // MessageServiceClient is the client API for MessageService service.
@@ -35,6 +36,7 @@ type MessageServiceClient interface {
 	GetGroupMessageList(ctx context.Context, in *GetGroupMessageListRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
 	GetRecentMessages(ctx context.Context, in *GetRecentMessagesRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
 	SearchMessages(ctx context.Context, in *SearchMessagesRequest, opts ...grpc.CallOption) (*MessageListResponse, error)
+	DeleteSessionMessages(ctx context.Context, in *GetRecentMessagesRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 }
 
 type messageServiceClient struct {
@@ -95,6 +97,16 @@ func (c *messageServiceClient) SearchMessages(ctx context.Context, in *SearchMes
 	return out, nil
 }
 
+func (c *messageServiceClient) DeleteSessionMessages(ctx context.Context, in *GetRecentMessagesRequest, opts ...grpc.CallOption) (*SendMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendMessageResponse)
+	err := c.cc.Invoke(ctx, MessageService_DeleteSessionMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessageServiceServer is the server API for MessageService service.
 // All implementations must embed UnimplementedMessageServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type MessageServiceServer interface {
 	GetGroupMessageList(context.Context, *GetGroupMessageListRequest) (*MessageListResponse, error)
 	GetRecentMessages(context.Context, *GetRecentMessagesRequest) (*MessageListResponse, error)
 	SearchMessages(context.Context, *SearchMessagesRequest) (*MessageListResponse, error)
+	DeleteSessionMessages(context.Context, *GetRecentMessagesRequest) (*SendMessageResponse, error)
 	mustEmbedUnimplementedMessageServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedMessageServiceServer) GetRecentMessages(context.Context, *Get
 }
 func (UnimplementedMessageServiceServer) SearchMessages(context.Context, *SearchMessagesRequest) (*MessageListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchMessages not implemented")
+}
+func (UnimplementedMessageServiceServer) DeleteSessionMessages(context.Context, *GetRecentMessagesRequest) (*SendMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSessionMessages not implemented")
 }
 func (UnimplementedMessageServiceServer) mustEmbedUnimplementedMessageServiceServer() {}
 func (UnimplementedMessageServiceServer) testEmbeddedByValue()                        {}
@@ -240,6 +256,24 @@ func _MessageService_SearchMessages_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageService_DeleteSessionMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRecentMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).DeleteSessionMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_DeleteSessionMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).DeleteSessionMessages(ctx, req.(*GetRecentMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessageService_ServiceDesc is the grpc.ServiceDesc for MessageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -266,6 +300,10 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SearchMessages",
 			Handler:    _MessageService_SearchMessages_Handler,
+		},
+		{
+			MethodName: "DeleteSessionMessages",
+			Handler:    _MessageService_DeleteSessionMessages_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

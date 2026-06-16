@@ -112,6 +112,21 @@ export interface MessageListResp {
   total: number;
 }
 
+export interface SearchMessagesReq {
+  keyword?: string;
+  senderId?: number;
+  sessionId?: number;
+  startTime?: number;
+  endTime?: number;
+  page?: number;
+  size?: number;
+}
+
+export interface GetRecentMessagesReq {
+  sessionId: number;
+  limit?: number;
+}
+
 // ── 联系人 ──
 export interface ContactVo {
   contactId: number;
@@ -132,6 +147,7 @@ export interface ApplyVo {
   applyId: number;
   fromId: number;
   nickname?: string;
+  avatar?: string;
   remark?: string;
   status: number;
 }

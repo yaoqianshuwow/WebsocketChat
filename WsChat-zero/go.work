@@ -6,6 +6,7 @@ use (
 	./app/gateway
 	./app/msg-forward
 	./app/msg-store
+	./app/ppt-agent
 	./app/user
 	./app/voice
 	./pkg

@@ -18,6 +18,7 @@ type ApplyVo struct {
 	ApplyId  int64  `json:"applyId"`
 	FromId   int64  `json:"fromId"`
 	Nickname string `json:"nickname,optional"`
+	Avatar   string `json:"avatar,optional"`
 	Remark   string `json:"remark,optional"`
 	Status   int32  `json:"status"`
 }
@@ -174,6 +175,7 @@ type MessageVo struct {
 	CreatedAt  int64  `json:"createdAt"`
 	SendName   string `json:"sendName,optional"`
 	SendAvatar string `json:"sendAvatar,optional"`
+	Mine       bool   `json:"mine"`
 }
 
 type PassContactApplyReq struct {
@@ -268,6 +270,16 @@ type UpdateGroupInfoReq struct {
 	Avatar  string `json:"avatar,optional"`
 	Notice  string `json:"notice,optional"`
 	AddMode int32  `json:"addMode,optional"`
+}
+
+type AiChatReq struct {
+	Message string `json:"message"`
+}
+
+type AiChatResp struct {
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
+	Reply   string `json:"reply,optional"`
 }
 
 type UpdateUserInfoReq struct {

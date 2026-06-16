@@ -26,8 +26,14 @@ func NewCreateSessionLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Cre
 }
 
 func (l *CreateSessionLogic) CreateSession(in *pb.CreateSessionRequest) (*pb.SessionResponse, error) {
+	userId := in.UserId
+	peerId := in.PeerId
+	if in.SessionType == 1 && userId > peerId {
+		userId, peerId = peerId, userId
+	}
+
 	var session model.Session
-	err := l.svcCtx.DB.Where("user_id = ? AND peer_id = ? AND session_type = ?", in.UserId, in.PeerId, in.SessionType).
+	err := l.svcCtx.DB.Where("user_id = ? AND peer_id = ? AND session_type = ?", userId, peerId, in.SessionType).
 		First(&session).Error
 	if err == nil {
 		if in.SessionName != "" && in.SessionName != session.SessionName {
@@ -45,14 +51,14 @@ func (l *CreateSessionLogic) CreateSession(in *pb.CreateSessionRequest) (*pb.Ses
 	}
 
 	session = model.Session{
-		UserId:      in.UserId,
-		PeerId:      in.PeerId,
+		UserId:      userId,
+		PeerId:      peerId,
 		SessionType: in.SessionType,
 		SessionName: in.SessionName,
 	}
 	if err := l.svcCtx.DB.Create(&session).Error; err != nil {
 		dup := model.Session{}
-		if err := l.svcCtx.DB.Where("user_id = ? AND peer_id = ? AND session_type = ?", in.UserId, in.PeerId, in.SessionType).
+		if err := l.svcCtx.DB.Where("user_id = ? AND peer_id = ? AND session_type = ?", userId, peerId, in.SessionType).
 			First(&dup).Error; err == nil {
 			return &pb.SessionResponse{Code: 0, Message: "ok", Data: sessionModelToProto(&dup)}, nil
 		}

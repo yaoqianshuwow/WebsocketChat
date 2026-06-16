@@ -54,15 +54,19 @@ func (c *Client) WritePump() {
 		case message, ok := <-c.Send:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				if err := c.Conn.WriteMessage(websocket.CloseMessage, []byte{}); err != nil {
+					logx.Errorf("ws close write error: userId=%d err=%v", c.UserId, err)
+				}
 				return
 			}
 			if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				logx.Errorf("ws write error: userId=%d err=%v", c.UserId, err)
 				return
 			}
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				logx.Errorf("ws ping error: userId=%d err=%v", c.UserId, err)
 				return
 			}
 		}

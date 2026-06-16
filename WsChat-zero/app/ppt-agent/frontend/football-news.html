@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>绿茵日报 - 足球新闻</title>
+  <style>
+    :root {
+      --bg: #08110a;
+      --bg-2: #0c1a0f;
+      --panel: rgba(11, 23, 14, 0.86);
+      --panel-2: rgba(255, 255, 255, 0.04);
+      --text: #ecf5ee;
+      --muted: #9ab3a1;
+      --line: rgba(255, 255, 255, 0.09);
+      --accent: #7df28a;
+      --accent-2: #2dd4bf;
+      --accent-3: #f4c95d;
+      --danger: #ff7b7b;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 10%, rgba(125, 242, 138, 0.18), transparent 28%),
+        radial-gradient(circle at 84% 18%, rgba(45, 212, 191, 0.16), transparent 24%),
+        radial-gradient(circle at 55% 80%, rgba(244, 201, 93, 0.10), transparent 30%),
+        linear-gradient(180deg, #071008 0%, #09140b 36%, #050805 100%);
+      overflow-x: hidden;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(16px);
+      background: rgba(5, 10, 6, 0.72);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar-inner {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .crest {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(125, 242, 138, 0.24), rgba(45, 212, 191, 0.24));
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a, .tag-btn, .ghost-btn {
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .nav a:hover, .tag-btn:hover, .ghost-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(125, 242, 138, 0.35);
+    }
+
+    .hero {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 24px 20px 10px;
+    }
+
+    .hero-shell {
+      position: relative;
+      min-height: 520px;
+      border-radius: 18px;
+      overflow: hidden;
+      background:
+        linear-gradient(145deg, rgba(6, 14, 8, 0.38), rgba(6, 14, 8, 0.78)),
+        url("https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1800&q=80") center/cover no-repeat;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hero-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(5, 10, 6, 0.06), rgba(5, 10, 6, 0.55)),
+        radial-gradient(circle at top right, rgba(125, 242, 138, 0.22), transparent 26%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr);
+      gap: 18px;
+      padding: 28px;
+      min-height: 520px;
+      align-items: end;
+    }
+
+    .hero-copy {
+      max-width: 800px;
+      padding: 10px 8px 0 6px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: #eef8f0;
+      font-size: 12px;
+      letter-spacing: .02em;
+    }
+
+    .hero-copy h2 {
+      margin: 18px 0 10px;
+      font-size: clamp(34px, 5vw, 66px);
+      line-height: 0.98;
+      letter-spacing: 0;
+      text-wrap: balance;
+    }
+
+    .hero-copy .lead {
+      margin: 0;
+      max-width: 700px;
+      font-size: 17px;
+      line-height: 1.75;
+      color: rgba(236, 245, 238, 0.86);
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #ecf5ee;
+      font-size: 13px;
+    }
+
+    .side-panel {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .score-card, .ticker-card {
+      border-radius: 16px;
+      background: rgba(7, 15, 9, 0.72);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+      padding: 18px;
+    }
+
+    .score-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .score-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .team {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .team-name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .team-info {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-size: 25px;
+      background: linear-gradient(135deg, rgba(125, 242, 138, 0.22), rgba(45, 212, 191, 0.18));
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .score {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .score-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .ticker-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .ticker-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #eef8f0;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .breaking {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #111;
+      background: linear-gradient(135deg, var(--accent-3), #ffe694);
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    .ticker-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .ticker-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .ticker-item:first-child { border-top: 0; padding-top: 0; }
+
+    .ticker-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      background: var(--accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 0 4px rgba(125,242,138,0.12);
+    }
+
+    .ticker-item strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .ticker-item span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .content {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 10px 20px 38px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 16px 0 14px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.9fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .story {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .story img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .story .body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .story .kicker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .story h4 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+      text-wrap: balance;
+    }
+
+    .story p {
+      margin: 0;
+      color: rgba(236,245,238,0.72);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .story .foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding-top: 2px;
+    }
+
+    .mini-col {
+      display: grid;
+      gap: 16px;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 0;
+      padding: 8px 16px 4px;
+    }
+
+    .mini-item {
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .mini-item:first-child { border-top: 0; }
+
+    .mini-item .top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .mini-item .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #071008;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 5px 8px;
+    }
+
+    .mini-item h4 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .mini-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .stats {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 14px;
+    }
+
+    .stat .num {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 16px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      border-top: 0;
+      background: rgba(255,255,255,0.02);
+    }
+
+    td strong { color: var(--text); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(125,242,138,0.10);
+      color: #b8ffc1;
+      border: 1px solid rgba(125,242,138,0.15);
+    }
+
+    .footer {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 20px 28px;
+      color: rgba(236,245,238,0.5);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-grid, .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .side-panel {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar-inner, .hero, .content, .footer { padding-left: 14px; padding-right: 14px; }
+      .topbar-inner { flex-direction: column; align-items: flex-start; }
+      .nav { width: 100%; justify-content: flex-start; }
+      .hero-shell { min-height: unset; }
+      .hero-grid { padding: 18px; }
+      .hero-copy h2 { font-size: 32px; }
+      .hero-copy .lead { font-size: 15px; }
+      .side-panel { grid-template-columns: 1fr; }
+      .story-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .section-head { align-items: flex-start; flex-direction: column; }
+      .score-row { grid-template-columns: 1fr; }
+      .score { text-align: left; }
+      .score-sub { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="crest">⚽</div>
+        <div>
+          <h1>绿茵日报</h1>
+          <p>即时比分 · 转会传闻 · 深度战报</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="主导航">
+        <a href="#hot">今日焦点</a>
+        <a href="#story">深度报道</a>
+        <a href="#table">联赛榜单</a>
+        <a href="#insight">数据看板</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-shell">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">英超 / 欧冠 / 转会窗</span>
+            <h2>今晚的绿茵场，所有故事都在最后 10 分钟发生</h2>
+            <p class="lead">
+              这里是一版偏新闻编辑台风格的足球网页：头条、赛果、转会、战术和数据全放在一个页面里，
+              方便快速扫读，也方便后续接 API 或改成实时更新。
+            </p>
+            <div class="meta-row">
+              <span class="meta-chip">⏱️ 更新于 19:45</span>
+              <span class="meta-chip">🏟️ 4 场重点比赛</span>
+              <span class="meta-chip">🔥 2 条突发转会</span>
+            </div>
+          </div>
+
+          <aside class="side-panel">
+            <div class="score-card">
+              <div class="score-label">
+                <span>今日焦点</span>
+                <span class="pill">直播中</span>
+              </div>
+              <div class="score-row">
+                <div class="team">
+                  <div class="badge">M</div>
+                  <div class="team-name">曼城</div>
+                  <div class="team-info">控球 67% · 射门 14</div>
+                </div>
+                <div>
+                  <div class="score">2 - 1</div>
+                  <div class="score-sub">86'</div>
+                </div>
+                <div class="team" style="text-align:right;">
+                  <div class="badge" style="margin-left:auto;">L</div>
+                  <div class="team-name">利物浦</div>
+                  <div class="team-info">反击 5 次 · 危险进攻 9</div>
+                </div>
+              </div>
+              <div class="meta-row" style="margin-top: 0;">
+                <span class="meta-chip">⚡ 哈兰德破门</span>
+                <span class="meta-chip">🟨 第 78 分钟黄牌</span>
+              </div>
+            </div>
+
+            <div class="ticker-card">
+              <div class="ticker-head">
+                <strong>突发快讯</strong>
+                <span style="color: var(--muted); font-size: 12px;">LIVE</span>
+              </div>
+              <div class="breaking">BREAKING</div>
+              <div class="ticker-list">
+                <div class="ticker-item">
+                  <div class="ticker-dot"></div>
+                  <div>
+                    <strong>阿森纳锁定边锋目标</strong>
+                    <span>据多家媒体报道，北伦敦球队正在加速推进夏窗首签。</span>
+                  </div>
+                </div>
+                <div class="ticker-item">
+                  <div class="ticker-dot" style="background: var(--accent-2); box-shadow: 0 0 0 4px rgba(45,212,191,0.12);"></div>
+                  <div>
+                    <strong>欧冠抽签结果出炉</strong>
+                    <span>死亡之组成形，几支豪门可能提前相遇。</span>
+                  </div>
+                </div>
+                <div class="ticker-item">
+                  <div class="ticker-dot" style="background: var(--accent-3); box-shadow: 0 0 0 4px rgba(244,201,93,0.12);"></div>
+                  <div>
+                    <strong>国家队名单更新</strong>
+                    <span>主教练确认两名新人入选，锋线竞争明显升温。</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="content" id="hot">
+      <div class="section-head">
+        <div>
+          <h3>今日焦点</h3>
+          <p>大图头条 + 快讯卡片，适合首页第一屏</p>
+        </div>
+        <a class="tag-btn" href="#story">查看全部报道</a>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="story-grid">
+            <article class="story">
+              <img src="https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1400&q=80" alt="球场看台与球迷" />
+              <div class="body">
+                <div class="kicker">头条 · 英超</div>
+                <h4>压哨绝杀点燃主场，争冠悬念被重新拉回最后一轮</h4>
+                <p>比赛从开局到终场哨一直拉满强度，边路推进和二点球争夺成为真正的胜负手。</p>
+                <div class="foot">
+                  <span>编辑部 · 5 分钟前</span>
+                  <span>阅读 12.4k</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="story">
+              <img src="https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1400&q=80" alt="球员庆祝进球" />
+              <div class="body">
+                <div class="kicker">战报 · 欧冠</div>
+                <h4>中场压迫打穿防线，客队用一套更直接的反击拿走晋级优势</h4>
+                <p>这不是一场单纯靠天赋赢下来的比赛，阵型切换和攻防节奏管理决定了走势。</p>
+                <div class="foot">
+                  <span>欧冠夜 · 13 分钟前</span>
+                  <span>战术图 8 张</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="mini-col">
+          <div class="card">
+            <div class="mini-list">
+              <div class="mini-item">
+                <div class="top">
+                  <span class="tag">转会</span>
+                  <span style="color: var(--muted); font-size: 12px;">18:20</span>
+                </div>
+                <h4>英超豪门加入争夺，6000 万欧中锋成今夏热门</h4>
+                <p>多支球队同时询价，价格锚点已经抬升到一线中锋区间。</p>
+              </div>
+              <div class="mini-item">
+                <div class="top">
+                  <span class="tag" style="background: var(--accent-2);">战术</span>
+                  <span style="color: var(--muted); font-size: 12px;">17:50</span>
+                </div>
+                <h4>三中卫不再保守，边翼卫前压让比赛节奏彻底变样</h4>
+                <p>这套思路在面对高位逼抢时更容易制造纵深，也更吃体能。</p>
+              </div>
+              <div class="mini-item">
+                <div class="top">
+                  <span class="tag" style="background: var(--accent-3);">青训</span>
+                  <span style="color: var(--muted); font-size: 12px;">16:10</span>
+                </div>
+                <h4>U21 新星连场进球，俱乐部计划提前锁定长期合同</h4>
+                <p>这名年轻前锋的第一脚处理和禁区嗅觉，已经开始像一线队球员了。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stats">
+              <div class="stat">
+                <div class="num">7</div>
+                <div class="label">今日重点新闻</div>
+              </div>
+              <div class="stat">
+                <div class="num">4</div>
+                <div class="label">热门联赛覆盖</div>
+              </div>
+              <div class="stat">
+                <div class="num">21</div>
+                <div class="label">实时比分卡片</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content" id="story">
+      <div class="section-head">
+        <div>
+          <h3>深度报道</h3>
+          <p>更适合写成长文、战术拆解和人物故事</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="story-grid">
+          <article class="story">
+            <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1400&q=80" alt="训练中的球员" />
+            <div class="body">
+              <div class="kicker">专栏</div>
+              <h4>为什么现在的足球越来越像一场空间争夺战</h4>
+              <p>从中场压迫到禁区前沿的二次推进，空间而不是单点爆破，正在重新定义比赛。</p>
+              <div class="foot"><span>作者：战术观察员</span><span>8 分钟阅读</span></div>
+            </div>
+          </article>
+          <article class="story">
+            <img src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1400&q=80" alt="球场航拍" />
+            <div class="body">
+              <div class="kicker">人物</div>
+              <h4>一位老门将的最后一季：经验、沉稳和一些不愿说出口的告别</h4>
+              <p>这不是一个关于数据的故事，而是一个关于掌声、沉默和更衣室影响力的故事。</p>
+              <div class="foot"><span>人物线 · 39k 讨论</span><span>3 张配图</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="content" id="table">
+      <div class="section-head">
+        <div>
+          <h3>联赛榜单</h3>
+          <p>一个干净的桌面表格，后续很容易接动态数据</p>
+        </div>
+      </div>
+
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>排名</th>
+              <th>球队</th>
+              <th>场次</th>
+              <th>积分</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>曼城</strong></td>
+              <td>34</td>
+              <td>79</td>
+              <td><span class="pill">连胜中</span></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>阿森纳</strong></td>
+              <td>34</td>
+              <td>77</td>
+              <td><span class="pill" style="background: rgba(45,212,191,0.10); color: #bcfffb; border-color: rgba(45,212,191,0.15);">追赶中</span></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>利物浦</strong></td>
+              <td>34</td>
+              <td>71</td>
+              <td><span class="pill" style="background: rgba(244,201,93,0.10); color: #fff0b1; border-color: rgba(244,201,93,0.15);">冲刺阶段</span></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>热刺</strong></td>
+              <td>34</td>
+              <td>60</td>
+              <td><span class="pill">争四中</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="content" id="insight">
+      <div class="section-head">
+        <div>
+          <h3>数据看板</h3>
+          <p>把新闻页做得像编辑部工作台，而不是一张花海报</p>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="card">
+          <div class="story-grid">
+            <article class="story">
+              <img src="https://images.unsplash.com/photo-1518091043644-c1d4457512c6?auto=format&fit=crop&w=1400&q=80" alt="庆祝瞬间" />
+              <div class="body">
+                <div class="kicker">数据</div>
+                <h4>射门质量、压迫强度和传球线路，谁才是比赛真正的钥匙</h4>
+                <p>通过 xG、推进次数和成功对抗数，把比赛背后发生的事情讲清楚。</p>
+              </div>
+            </article>
+            <article class="story">
+              <img src="https://images.unsplash.com/photo-1486286701208-1d58e9338013?auto=format&fit=crop&w=1400&q=80" alt="球员奔跑" />
+              <div class="body">
+                <div class="kicker">观察</div>
+                <h4>边路速度和禁区嗅觉，仍然是最容易写出爆点的两个位置</h4>
+                <p>当比赛被拉成纵向对冲，边锋和中锋的临门一脚就会成为全场分水岭。</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="mini-list">
+            <div class="mini-item">
+              <div class="top">
+                <span class="tag">推荐关注</span>
+                <span style="color: var(--muted); font-size: 12px;">每 10 分钟更新</span>
+              </div>
+              <h4>实时比分、转会传闻、战术拆解、球员访谈</h4>
+              <p>后续可以直接对接接口，把这些静态块替换成新闻 API 和赛事数据源。</p>
+            </div>
+            <div class="mini-item">
+              <div class="top">
+                <span class="tag" style="background: var(--accent-2);">可扩展</span>
+                <span style="color: var(--muted); font-size: 12px;">模块化</span>
+              </div>
+              <h4>头条区、快讯流、榜单、战报、数据看板都已分区</h4>
+              <p>继续加交互时，只需要替换局部卡片，不必重做整个页面。</p>
+            </div>
+            <div class="mini-item">
+              <div class="top">
+                <span class="tag" style="background: var(--accent-3);">响应式</span>
+                <span style="color: var(--muted); font-size: 12px;">桌面 / 手机</span>
+              </div>
+              <h4>从大屏到手机，都能维持清晰的新闻阅读节奏</h4>
+              <p>字号、卡片和布局都做了自适应，避免移动端挤成一团。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">
+    绿茵日报 · 足球新闻网页原型 · 可直接打开 `frontend/football-news.html`
+  </div>
+</body>
+</html>
